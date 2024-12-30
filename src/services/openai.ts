@@ -42,7 +42,7 @@ export const generateMenu = async (pdfContent: string, period: "weekly" | "biwee
   try {
     const completion = await openai.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "gpt-4o",
+      model: "gpt-4",
       response_format: { type: "json_object" }
     });
 
