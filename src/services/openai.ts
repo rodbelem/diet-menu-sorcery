@@ -3,12 +3,16 @@ import { Menu } from '@/types/menu';
 import { supabase } from '@/integrations/supabase/client';
 
 const getOpenAIClient = async () => {
-  const { data: { secret } } = await supabase.functions.invoke('get-secret', {
+  const { data, error } = await supabase.functions.invoke('get-secret', {
     body: { name: 'OPENAI_API_KEY' }
   });
   
+  if (error || !data?.secret) {
+    throw new Error('Failed to get OpenAI API key');
+  }
+  
   return new OpenAI({
-    apiKey: secret,
+    apiKey: data.secret,
     dangerouslyAllowBrowser: true
   });
 };
@@ -51,7 +55,7 @@ export const generateMenu = async (pdfContent: string, period: "weekly" | "biwee
   try {
     const completion = await openai.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "gpt-4",
+      model: "gpt-4o-mini",
       response_format: { type: "json_object" }
     });
 
