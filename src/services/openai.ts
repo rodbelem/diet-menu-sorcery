@@ -1,12 +1,21 @@
 import OpenAI from 'openai';
 import { Menu } from '@/types/menu';
+import { supabase } from '@/integrations/supabase/client';
 
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true
-});
+const getOpenAIClient = async () => {
+  const { data: { secret } } = await supabase.functions.invoke('get-secret', {
+    body: { name: 'OPENAI_API_KEY' }
+  });
+  
+  return new OpenAI({
+    apiKey: secret,
+    dangerouslyAllowBrowser: true
+  });
+};
 
 export const generateMenu = async (pdfContent: string, period: "weekly" | "biweekly") => {
+  const openai = await getOpenAIClient();
+  
   const prompt = `Com base no seguinte plano nutricional:
   
   ${pdfContent}
