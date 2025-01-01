@@ -87,9 +87,9 @@ const Index = () => {
             </Button>
           </div>
 
-        {menu && (
-          <>
-            <div className="space-y-4 md:space-y-6">
+          {menu && (
+            <>
+              <div className="space-y-4 md:space-y-6">
                 {menu.days.map((day, index) => (
                   <Card
                     key={index}
@@ -150,45 +150,46 @@ const Index = () => {
                     </p>
                   </CardContent>
                 </Card>
-            </div>
+              </div>
 
-            <div className="flex flex-col md:flex-row gap-4 justify-center pt-6 md:pt-8">
-              <PDFDownloadLink
-                document={<MenuPDF menu={menu} />}
-                fileName="cardapio.pdf"
-                className="w-full md:w-auto"
-              >
-                {({ loading }) => (
-                  <Button
-                    disabled={loading}
-                    className="w-full md:w-auto rounded-full bg-gradient-to-r from-primary to-primary-dark hover:opacity-90 transition-all duration-300"
-                    type="button"
-                  >
-                    <Download className="w-5 h-5 mr-2" />
-                    {loading ? "Gerando PDF..." : "Baixar Cardápio em PDF"}
-                  </Button>
-                )}
-              </PDFDownloadLink>
+              <div className="flex flex-col md:flex-row gap-4 justify-center pt-6 md:pt-8">
+                <PDFDownloadLink
+                  document={<MenuPDF menu={menu} />}
+                  fileName="cardapio.pdf"
+                  className="w-full md:w-auto"
+                >
+                  {({ loading }) => (
+                    <Button
+                      disabled={loading}
+                      className="w-full md:w-auto rounded-full bg-gradient-to-r from-primary to-primary-dark hover:opacity-90 transition-all duration-300"
+                      type="button"
+                    >
+                      <Download className="w-5 h-5 mr-2" />
+                      {loading ? "Gerando PDF..." : "Baixar Cardápio em PDF"}
+                    </Button>
+                  )}
+                </PDFDownloadLink>
 
-              <PDFDownloadLink
-                document={<ShoppingListPDF menu={menu} />}
-                fileName="lista-de-compras.pdf"
-                className="w-full md:w-auto"
-              >
-                {({ loading }) => (
-                  <Button
-                    disabled={loading}
-                    className="w-full md:w-auto rounded-full bg-gradient-to-r from-accent to-accent-dark hover:opacity-90 transition-all duration-300"
-                    type="button"
-                  >
-                    <ShoppingBag className="w-5 h-5 mr-2" />
-                    {loading ? "Gerando PDF..." : "Baixar Lista de Compras em PDF"}
-                  </Button>
-                )}
-              </PDFDownloadLink>
-            </div>
-          </>
-        )}
+                <PDFDownloadLink
+                  document={<ShoppingListPDF menu={menu} />}
+                  fileName="lista-de-compras.pdf"
+                  className="w-full md:w-auto"
+                >
+                  {({ loading }) => (
+                    <Button
+                      disabled={loading}
+                      className="w-full md:w-auto rounded-full bg-gradient-to-r from-accent to-accent-dark hover:opacity-90 transition-all duration-300"
+                      type="button"
+                    >
+                      <ShoppingBag className="w-5 h-5 mr-2" />
+                      {loading ? "Gerando PDF..." : "Baixar Lista de Compras em PDF"}
+                    </Button>
+                  )}
+                </PDFDownloadLink>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
