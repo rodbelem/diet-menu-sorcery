@@ -24,8 +24,10 @@ export const generateMenu = async (pdfContent: string, period: "weekly" | "biwee
   
   ${pdfContent}
   
-  Gere um cardápio ${period === "weekly" ? "semanal" : "quinzenal"} detalhado com as seguintes informações:
+  Gere um cardápio ${period === "weekly" ? "semanal (7 dias completos)" : "quinzenal (15 dias completos)"} detalhado com as seguintes informações:
   - Refeições para cada dia informando o peso de cada ingrediente
+  - O cardápio DEVE começar em uma segunda-feira e incluir TODOS os dias até ${period === "weekly" ? "domingo" : "o domingo da segunda semana"}
+  - Para cada dia, inclua TODAS as refeições (café da manhã, almoço, lanche da tarde, jantar, ceia)
 
   Abaixo disso, preciso que você me gere uma lista completa de compras dos ingredientes necessários para todas as refeições serem feitas. Adicione uma estimativa de custo para cada conjunto de ingrediente (em reais) e uma estimativa de custo total.
   
