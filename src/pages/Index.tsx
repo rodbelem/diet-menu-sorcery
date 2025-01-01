@@ -3,19 +3,20 @@ import { PdfUploader } from "@/components/PdfUploader";
 import { PeriodSelector } from "@/components/PeriodSelector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { generateMenu } from "@/services/openai";
-import { Menu } from "@/types/menu";
+import { generateMenu, regenerateMeal } from "@/services/openai";
+import { Menu, MenuItem } from "@/types/menu";
 import { useToast } from "@/hooks/use-toast";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { MenuPDF } from "@/components/MenuPDF";
 import { ShoppingListPDF } from "@/components/ShoppingListPDF";
-import { Download, Utensils, ShoppingBag } from "lucide-react";
+import { Download, Utensils, ShoppingBag, RefreshCw } from "lucide-react";
 
 const Index = () => {
   const [period, setPeriod] = useState<"weekly" | "biweekly">("weekly");
   const [pdfContent, setPdfContent] = useState<string>("");
   const [menu, setMenu] = useState<Menu | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [regeneratingMeal, setRegeneratingMeal] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handlePdfContent = (content: string) => {
@@ -48,6 +49,41 @@ const Index = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleRegenerateMeal = async (dayIndex: number, mealIndex: number, mealType: string) => {
+    if (!menu || !pdfContent) return;
+    
+    setRegeneratingMeal(`${dayIndex}-${mealIndex}`);
+    try {
+      const newMeal = await regenerateMeal(pdfContent, mealType);
+      
+      const updatedMenu = { ...menu };
+      updatedMenu.days[dayIndex].meals[mealIndex] = newMeal;
+      
+      // Recalculate total cost
+      updatedMenu.totalCost = updatedMenu.days.reduce((total, day) => {
+        return total + day.meals.reduce((dayTotal, meal) => {
+          return dayTotal + meal.ingredients.reduce((mealTotal, ingredient) => {
+            return mealTotal + ingredient.estimatedCost;
+          }, 0);
+        }, 0);
+      }, 0);
+      
+      setMenu(updatedMenu);
+      toast({
+        title: "Sucesso!",
+        description: "Nova opção de refeição gerada com sucesso",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível gerar nova opção de refeição. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setRegeneratingMeal(null);
     }
   };
 
@@ -90,9 +126,9 @@ const Index = () => {
           {menu && (
             <>
               <div className="space-y-4 md:space-y-6">
-                {menu.days.map((day, index) => (
+                {menu.days.map((day, dayIndex) => (
                   <Card
-                    key={index}
+                    key={dayIndex}
                     className="border-0 shadow-nutri overflow-hidden bg-white/50 backdrop-blur-sm hover:shadow-lg transition-shadow duration-300"
                   >
                     <CardHeader className="bg-gradient-to-r from-nutri-green to-nutri-blue p-4 md:p-6">
@@ -106,9 +142,21 @@ const Index = () => {
                           key={mealIndex}
                           className="space-y-3 md:space-y-4 p-4 rounded-lg bg-white/70"
                         >
-                          <h3 className="font-semibold text-lg md:text-xl text-primary-dark">
-                            {meal.meal}
-                          </h3>
+                          <div className="flex justify-between items-center">
+                            <h3 className="font-semibold text-lg md:text-xl text-primary-dark">
+                              {meal.meal}
+                            </h3>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRegenerateMeal(dayIndex, mealIndex, meal.meal)}
+                              disabled={regeneratingMeal === `${dayIndex}-${mealIndex}`}
+                              className="text-xs md:text-sm"
+                            >
+                              <RefreshCw className={`w-4 h-4 mr-2 ${regeneratingMeal === `${dayIndex}-${mealIndex}` ? 'animate-spin' : ''}`} />
+                              {regeneratingMeal === `${dayIndex}-${mealIndex}` ? "Gerando..." : "Gerar outra opção"}
+                            </Button>
+                          </div>
                           <p className="text-sm md:text-base text-gray-600">
                             {meal.description}
                           </p>
@@ -153,27 +201,35 @@ const Index = () => {
                 <PDFDownloadLink
                   document={<MenuPDF menu={menu} />}
                   fileName="cardapio.pdf"
+                  className="w-full md:w-auto"
                 >
-                  <Button
-                    className="w-full md:w-auto rounded-full bg-gradient-to-r from-primary to-primary-dark hover:opacity-90 transition-all duration-300"
-                    type="button"
-                  >
-                    <Download className="w-5 h-5 mr-2" />
-                    Baixar Cardápio em PDF
-                  </Button>
+                  {({ loading }) => (
+                    <Button
+                      disabled={loading}
+                      className="w-full md:w-auto rounded-full bg-gradient-to-r from-primary to-primary-dark hover:opacity-90 transition-all duration-300"
+                      type="button"
+                    >
+                      <Download className="w-5 h-5 mr-2" />
+                      {loading ? "Gerando PDF..." : "Baixar Cardápio em PDF"}
+                    </Button>
+                  )}
                 </PDFDownloadLink>
 
                 <PDFDownloadLink
                   document={<ShoppingListPDF menu={menu} />}
                   fileName="lista-de-compras.pdf"
+                  className="w-full md:w-auto"
                 >
-                  <Button
-                    className="w-full md:w-auto rounded-full bg-gradient-to-r from-accent to-accent-dark hover:opacity-90 transition-all duration-300"
-                    type="button"
-                  >
-                    <ShoppingBag className="w-5 h-5 mr-2" />
-                    Baixar Lista de Compras em PDF
-                  </Button>
+                  {({ loading }) => (
+                    <Button
+                      disabled={loading}
+                      className="w-full md:w-auto rounded-full bg-gradient-to-r from-accent to-accent-dark hover:opacity-90 transition-all duration-300"
+                      type="button"
+                    >
+                      <ShoppingBag className="w-5 h-5 mr-2" />
+                      {loading ? "Gerando PDF..." : "Baixar Lista de Compras em PDF"}
+                    </Button>
+                  )}
                 </PDFDownloadLink>
               </div>
             </>

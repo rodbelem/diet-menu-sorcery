@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { Menu } from '@/types/menu';
+import { Menu, MenuItem } from '@/types/menu';
 import { supabase } from '@/integrations/supabase/client';
 
 const getOpenAIClient = async () => {
@@ -67,6 +67,45 @@ export const generateMenu = async (pdfContent: string, period: "weekly" | "biwee
     return JSON.parse(response) as Menu;
   } catch (error) {
     console.error("Erro ao gerar cardápio:", error);
+    throw error;
+  }
+};
+
+export const regenerateMeal = async (pdfContent: string, mealType: string) => {
+  const openai = await getOpenAIClient();
+  
+  const prompt = `Com base no seguinte plano nutricional:
+  
+  ${pdfContent}
+  
+  Gere uma nova opção para a refeição "${mealType}" que seja diferente da anterior mas ainda siga o plano nutricional.
+  
+  Retorne os dados no seguinte formato JSON:
+  {
+    "meal": "${mealType}",
+    "description": "Descrição da refeição",
+    "ingredients": [
+      {
+        "name": "Nome do ingrediente",
+        "quantity": "Quantidade necessária",
+        "estimatedCost": 0.00
+      }
+    ]
+  }`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" }
+    });
+
+    const response = completion.choices[0].message.content;
+    if (!response) throw new Error("Não foi possível gerar nova opção de refeição");
+    
+    return JSON.parse(response) as MenuItem;
+  } catch (error) {
+    console.error("Erro ao gerar nova opção de refeição:", error);
     throw error;
   }
 };
