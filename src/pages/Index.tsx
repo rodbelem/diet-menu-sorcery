@@ -126,9 +126,6 @@ const Index = () => {
                                   <span className="flex-1">
                                     {ingredient.name} - {ingredient.quantity}
                                   </span>
-                                  <span className="text-primary font-medium whitespace-nowrap">
-                                    R$ {ingredient.estimatedCost.toFixed(2)}
-                                  </span>
                                 </li>
                               ))}
                             </ul>
@@ -156,35 +153,27 @@ const Index = () => {
                 <PDFDownloadLink
                   document={<MenuPDF menu={menu} />}
                   fileName="cardapio.pdf"
-                  className="w-full md:w-auto"
                 >
-                  {({ loading }) => (
-                    <Button
-                      disabled={loading}
-                      className="w-full md:w-auto rounded-full bg-gradient-to-r from-primary to-primary-dark hover:opacity-90 transition-all duration-300"
-                      type="button"
-                    >
-                      <Download className="w-5 h-5 mr-2" />
-                      {loading ? "Gerando PDF..." : "Baixar Cardápio em PDF"}
-                    </Button>
-                  )}
+                  <Button
+                    className="w-full md:w-auto rounded-full bg-gradient-to-r from-primary to-primary-dark hover:opacity-90 transition-all duration-300"
+                    type="button"
+                  >
+                    <Download className="w-5 h-5 mr-2" />
+                    Baixar Cardápio em PDF
+                  </Button>
                 </PDFDownloadLink>
 
                 <PDFDownloadLink
                   document={<ShoppingListPDF menu={menu} />}
                   fileName="lista-de-compras.pdf"
-                  className="w-full md:w-auto"
                 >
-                  {({ loading }) => (
-                    <Button
-                      disabled={loading}
-                      className="w-full md:w-auto rounded-full bg-gradient-to-r from-accent to-accent-dark hover:opacity-90 transition-all duration-300"
-                      type="button"
-                    >
-                      <ShoppingBag className="w-5 h-5 mr-2" />
-                      {loading ? "Gerando PDF..." : "Baixar Lista de Compras em PDF"}
-                    </Button>
-                  )}
+                  <Button
+                    className="w-full md:w-auto rounded-full bg-gradient-to-r from-accent to-accent-dark hover:opacity-90 transition-all duration-300"
+                    type="button"
+                  >
+                    <ShoppingBag className="w-5 h-5 mr-2" />
+                    Baixar Lista de Compras em PDF
+                  </Button>
                 </PDFDownloadLink>
               </div>
             </>
