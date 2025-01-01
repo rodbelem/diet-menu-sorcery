@@ -9,7 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { MenuPDF } from "@/components/MenuPDF";
 import { ShoppingListPDF } from "@/components/ShoppingListPDF";
-import { Download, Utensils, ShoppingBag, RefreshCw } from "lucide-react";
+import { Download, ShoppingBag, RefreshCw } from "lucide-react";
+import { GenerateMenuButton } from "@/components/GenerateMenuButton";
 
 const Index = () => {
   const [period, setPeriod] = useState<"weekly" | "biweekly">("weekly");
@@ -18,10 +19,6 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [regeneratingMeal, setRegeneratingMeal] = useState<string | null>(null);
   const { toast } = useToast();
-
-  const handlePdfContent = (content: string) => {
-    setPdfContent(content);
-  };
 
   const handleGenerateMenu = async () => {
     if (!pdfContent) {
@@ -113,14 +110,7 @@ const Index = () => {
           </Card>
 
           <div className="text-center">
-            <Button
-              onClick={handleGenerateMenu}
-              disabled={isLoading}
-              className="w-full md:w-auto text-lg py-6 px-8 rounded-full bg-gradient-to-r from-primary to-primary-dark hover:opacity-90 transition-all duration-300"
-            >
-              <Utensils className="w-5 h-5 mr-2" />
-              {isLoading ? "Gerando..." : "Gerar Cardápio"}
-            </Button>
+            <GenerateMenuButton onClick={handleGenerateMenu} isLoading={isLoading} />
           </div>
 
           {menu && (
@@ -196,7 +186,6 @@ const Index = () => {
                   </CardContent>
                 </Card>
               </div>
-
               <div className="flex flex-col md:flex-row gap-4 justify-center pt-6 md:pt-8">
                 <PDFDownloadLink
                   document={<MenuPDF menu={menu} />}
