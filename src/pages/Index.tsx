@@ -53,25 +53,25 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-nutri-gray">
-      <div className="container py-12">
-        <header className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+      <div className="container py-6 md:py-12 px-4 md:px-8">
+        <header className="text-center mb-8 md:mb-16">
+          <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4 md:mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Planejador de Cardápio
           </h1>
-          <p className="text-lg text-gray-600 font-light">
+          <p className="text-base md:text-lg text-gray-600 font-light">
             Monte seu cardápio personalizado baseado no seu plano nutricional
           </p>
         </header>
 
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
           <Card className="border-0 shadow-nutri overflow-hidden bg-white/50 backdrop-blur-sm">
-            <CardContent className="p-8">
+            <CardContent className="p-4 md:p-8">
               <PdfUploader onContentExtracted={handlePdfContent} />
             </CardContent>
           </Card>
 
           <Card className="border-0 shadow-nutri overflow-hidden bg-white/50 backdrop-blur-sm">
-            <CardContent className="p-8">
+            <CardContent className="p-4 md:p-8">
               <PeriodSelector selected={period} onSelect={setPeriod} />
             </CardContent>
           </Card>
@@ -89,25 +89,44 @@ const Index = () => {
 
           {menu && (
             <>
-              <div className="space-y-6">
+              <div className="space-y-4 md:space-y-6">
                 {menu.days.map((day, index) => (
-                  <Card key={index} className="border-0 shadow-nutri overflow-hidden bg-white/50 backdrop-blur-sm hover:shadow-lg transition-shadow duration-300">
-                    <CardHeader className="bg-gradient-to-r from-nutri-green to-nutri-blue p-6">
-                      <CardTitle className="text-2xl font-semibold text-gray-800">{day.day}</CardTitle>
+                  <Card
+                    key={index}
+                    className="border-0 shadow-nutri overflow-hidden bg-white/50 backdrop-blur-sm hover:shadow-lg transition-shadow duration-300"
+                  >
+                    <CardHeader className="bg-gradient-to-r from-nutri-green to-nutri-blue p-4 md:p-6">
+                      <CardTitle className="text-xl md:text-2xl font-semibold text-gray-800">
+                        {day.day}
+                      </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-6 space-y-6">
+                    <CardContent className="p-4 md:p-6 space-y-4 md:space-y-6">
                       {day.meals.map((meal, mealIndex) => (
-                        <div key={mealIndex} className="space-y-4 p-4 rounded-lg bg-white/70">
-                          <h3 className="font-semibold text-xl text-primary-dark">{meal.meal}</h3>
-                          <p className="text-gray-600">{meal.description}</p>
-                          <div className="space-y-3">
-                            <h4 className="font-medium text-gray-700">Ingredientes:</h4>
-                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div
+                          key={mealIndex}
+                          className="space-y-3 md:space-y-4 p-4 rounded-lg bg-white/70"
+                        >
+                          <h3 className="font-semibold text-lg md:text-xl text-primary-dark">
+                            {meal.meal}
+                          </h3>
+                          <p className="text-sm md:text-base text-gray-600">
+                            {meal.description}
+                          </p>
+                          <div className="space-y-2 md:space-y-3">
+                            <h4 className="font-medium text-gray-700">
+                              Ingredientes:
+                            </h4>
+                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3">
                               {meal.ingredients.map((ingredient, ingredientIndex) => (
-                                <li key={ingredientIndex} className="flex items-center space-x-2 text-sm">
-                                  <span className="w-2 h-2 rounded-full bg-primary-light"></span>
-                                  <span className="flex-1">{ingredient.name} - {ingredient.quantity}</span>
-                                  <span className="text-primary font-medium">
+                                <li
+                                  key={ingredientIndex}
+                                  className="flex items-center space-x-2 text-xs md:text-sm"
+                                >
+                                  <span className="w-2 h-2 rounded-full bg-primary-light flex-shrink-0"></span>
+                                  <span className="flex-1">
+                                    {ingredient.name} - {ingredient.quantity}
+                                  </span>
+                                  <span className="text-primary font-medium whitespace-nowrap">
                                     R$ {ingredient.estimatedCost.toFixed(2)}
                                   </span>
                                 </li>
@@ -120,26 +139,29 @@ const Index = () => {
                   </Card>
                 ))}
                 <Card className="border-0 shadow-nutri overflow-hidden bg-white/50 backdrop-blur-sm">
-                  <CardHeader className="bg-gradient-to-r from-nutri-yellow to-nutri-orange p-6">
-                    <CardTitle className="text-2xl font-semibold text-gray-800">Custo Total Estimado</CardTitle>
+                  <CardHeader className="bg-gradient-to-r from-nutri-yellow to-nutri-orange p-4 md:p-6">
+                    <CardTitle className="text-xl md:text-2xl font-semibold text-gray-800">
+                      Custo Total Estimado
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6">
-                    <p className="text-3xl font-bold text-primary">
+                  <CardContent className="p-4 md:p-6">
+                    <p className="text-2xl md:text-3xl font-bold text-primary">
                       R$ {menu.totalCost.toFixed(2)}
                     </p>
                   </CardContent>
                 </Card>
               </div>
 
-              <div className="flex flex-col md:flex-row gap-4 justify-center pt-8">
+              <div className="flex flex-col md:flex-row gap-4 justify-center pt-6 md:pt-8">
                 <PDFDownloadLink
                   document={<MenuPDF menu={menu} />}
                   fileName="cardapio.pdf"
+                  className="w-full md:w-auto"
                 >
                   {({ loading }) => (
-                    <Button 
+                    <Button
                       disabled={loading}
-                      className="rounded-full bg-gradient-to-r from-primary to-primary-dark hover:opacity-90 transition-all duration-300"
+                      className="w-full md:w-auto rounded-full bg-gradient-to-r from-primary to-primary-dark hover:opacity-90 transition-all duration-300"
                     >
                       <Download className="w-5 h-5 mr-2" />
                       {loading ? "Gerando PDF..." : "Baixar Cardápio em PDF"}
@@ -150,11 +172,12 @@ const Index = () => {
                 <PDFDownloadLink
                   document={<ShoppingListPDF menu={menu} />}
                   fileName="lista-de-compras.pdf"
+                  className="w-full md:w-auto"
                 >
                   {({ loading }) => (
-                    <Button 
+                    <Button
                       disabled={loading}
-                      className="rounded-full bg-gradient-to-r from-accent to-accent-dark hover:opacity-90 transition-all duration-300"
+                      className="w-full md:w-auto rounded-full bg-gradient-to-r from-accent to-accent-dark hover:opacity-90 transition-all duration-300"
                     >
                       <ShoppingBag className="w-5 h-5 mr-2" />
                       {loading ? "Gerando PDF..." : "Baixar Lista de Compras em PDF"}
