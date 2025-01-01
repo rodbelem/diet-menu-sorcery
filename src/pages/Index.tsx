@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { MenuPDF } from "@/components/MenuPDF";
 import { ShoppingListPDF } from "@/components/ShoppingListPDF";
-import { Download } from "lucide-react";
+import { Download, Utensils, ShoppingBag } from "lucide-react";
 
 const Index = () => {
   const [period, setPeriod] = useState<"weekly" | "biweekly">("weekly");
@@ -52,60 +52,66 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container py-8">
-        <header className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+    <div className="min-h-screen bg-nutri-gray">
+      <div className="container py-12">
+        <header className="text-center mb-16">
+          <h1 className="text-5xl font-bold text-gray-900 mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Planejador de Cardápio
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-gray-600 font-light">
             Monte seu cardápio personalizado baseado no seu plano nutricional
           </p>
         </header>
 
-        <div className="max-w-4xl mx-auto space-y-12">
-          <section className="bg-white p-8 rounded-lg shadow-sm">
-            <PdfUploader onContentExtracted={handlePdfContent} />
-          </section>
+        <div className="max-w-4xl mx-auto space-y-8">
+          <Card className="border-0 shadow-nutri overflow-hidden bg-white/50 backdrop-blur-sm">
+            <CardContent className="p-8">
+              <PdfUploader onContentExtracted={handlePdfContent} />
+            </CardContent>
+          </Card>
 
-          <section className="bg-white p-8 rounded-lg shadow-sm">
-            <PeriodSelector selected={period} onSelect={setPeriod} />
-          </section>
+          <Card className="border-0 shadow-nutri overflow-hidden bg-white/50 backdrop-blur-sm">
+            <CardContent className="p-8">
+              <PeriodSelector selected={period} onSelect={setPeriod} />
+            </CardContent>
+          </Card>
 
-          <section className="text-center">
+          <div className="text-center">
             <Button
               onClick={handleGenerateMenu}
               disabled={isLoading}
-              className="w-full md:w-auto"
+              className="w-full md:w-auto text-lg py-6 px-8 rounded-full bg-gradient-to-r from-primary to-primary-dark hover:opacity-90 transition-all duration-300"
             >
+              <Utensils className="w-5 h-5 mr-2" />
               {isLoading ? "Gerando..." : "Gerar Cardápio"}
             </Button>
-          </section>
+          </div>
 
           {menu && (
             <>
-              <section className="space-y-8">
+              <div className="space-y-6">
                 {menu.days.map((day, index) => (
-                  <Card key={index}>
-                    <CardHeader>
-                      <CardTitle>{day.day}</CardTitle>
+                  <Card key={index} className="border-0 shadow-nutri overflow-hidden bg-white/50 backdrop-blur-sm hover:shadow-lg transition-shadow duration-300">
+                    <CardHeader className="bg-gradient-to-r from-nutri-green to-nutri-blue p-6">
+                      <CardTitle className="text-2xl font-semibold text-gray-800">{day.day}</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-6">
+                    <CardContent className="p-6 space-y-6">
                       {day.meals.map((meal, mealIndex) => (
-                        <div key={mealIndex} className="space-y-4">
-                          <h3 className="font-semibold text-lg">{meal.meal}</h3>
+                        <div key={mealIndex} className="space-y-4 p-4 rounded-lg bg-white/70">
+                          <h3 className="font-semibold text-xl text-primary-dark">{meal.meal}</h3>
                           <p className="text-gray-600">{meal.description}</p>
-                          <div className="space-y-2">
-                            <h4 className="font-medium">Ingredientes:</h4>
-                            <ul className="list-disc pl-5 space-y-1">
-                              {meal.ingredients.map(
-                                (ingredient, ingredientIndex) => (
-                                  <li key={ingredientIndex}>
-                                    {ingredient.name} - {ingredient.quantity} (R$ 
-                                    {ingredient.estimatedCost.toFixed(2)})
-                                  </li>
-                                )
-                              )}
+                          <div className="space-y-3">
+                            <h4 className="font-medium text-gray-700">Ingredientes:</h4>
+                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {meal.ingredients.map((ingredient, ingredientIndex) => (
+                                <li key={ingredientIndex} className="flex items-center space-x-2 text-sm">
+                                  <span className="w-2 h-2 rounded-full bg-primary-light"></span>
+                                  <span className="flex-1">{ingredient.name} - {ingredient.quantity}</span>
+                                  <span className="text-primary font-medium">
+                                    R$ {ingredient.estimatedCost.toFixed(2)}
+                                  </span>
+                                </li>
+                              ))}
                             </ul>
                           </div>
                         </div>
@@ -113,26 +119,29 @@ const Index = () => {
                     </CardContent>
                   </Card>
                 ))}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Custo Total Estimado</CardTitle>
+                <Card className="border-0 shadow-nutri overflow-hidden bg-white/50 backdrop-blur-sm">
+                  <CardHeader className="bg-gradient-to-r from-nutri-yellow to-nutri-orange p-6">
+                    <CardTitle className="text-2xl font-semibold text-gray-800">Custo Total Estimado</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <p className="text-2xl font-bold">
+                  <CardContent className="p-6">
+                    <p className="text-3xl font-bold text-primary">
                       R$ {menu.totalCost.toFixed(2)}
                     </p>
                   </CardContent>
                 </Card>
-              </section>
+              </div>
 
-              <section className="flex gap-4 justify-center">
+              <div className="flex flex-col md:flex-row gap-4 justify-center pt-8">
                 <PDFDownloadLink
                   document={<MenuPDF menu={menu} />}
                   fileName="cardapio.pdf"
                 >
                   {({ loading }) => (
-                    <Button disabled={loading}>
-                      <Download className="w-4 h-4 mr-2" />
+                    <Button 
+                      disabled={loading}
+                      className="rounded-full bg-gradient-to-r from-primary to-primary-dark hover:opacity-90 transition-all duration-300"
+                    >
+                      <Download className="w-5 h-5 mr-2" />
                       {loading ? "Gerando PDF..." : "Baixar Cardápio em PDF"}
                     </Button>
                   )}
@@ -143,15 +152,16 @@ const Index = () => {
                   fileName="lista-de-compras.pdf"
                 >
                   {({ loading }) => (
-                    <Button disabled={loading}>
-                      <Download className="w-4 h-4 mr-2" />
-                      {loading
-                        ? "Gerando PDF..."
-                        : "Baixar Lista de Compras em PDF"}
+                    <Button 
+                      disabled={loading}
+                      className="rounded-full bg-gradient-to-r from-accent to-accent-dark hover:opacity-90 transition-all duration-300"
+                    >
+                      <ShoppingBag className="w-5 h-5 mr-2" />
+                      {loading ? "Gerando PDF..." : "Baixar Lista de Compras em PDF"}
                     </Button>
                   )}
                 </PDFDownloadLink>
-              </section>
+              </div>
             </>
           )}
         </div>

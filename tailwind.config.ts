@@ -18,6 +18,9 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Poppins', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -28,53 +31,32 @@ export default {
           DEFAULT: "#4CAF50",
           light: "#81C784",
           dark: "#388E3C",
-          foreground: "hsl(var(--primary-foreground))",
+          foreground: "#FFFFFF",
         },
         accent: {
-          DEFAULT: "#FFB74D",
-          light: "#FFE9CA",
-          dark: "#FFA726",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "#D6BCFA",
+          light: "#E5DEFF",
+          dark: "#B794F4",
+          foreground: "#1A1A1A",
         },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+        nutri: {
+          green: "#F2FCE2",
+          yellow: "#FEF7CD",
+          orange: "#FEC6A1",
+          purple: "#E5DEFF",
+          pink: "#FFDEE2",
+          peach: "#FDE1D3",
+          blue: "#D3E4FD",
+          gray: "#F1F0FB",
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        lg: "1rem",
+        md: "0.75rem",
+        sm: "0.5rem",
       },
-      keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
-      },
-      animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+      boxShadow: {
+        'nutri': '0 4px 14px 0 rgba(0, 0, 0, 0.05)',
       },
     },
   },
