@@ -6,6 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { generateMenu } from "@/services/openai";
 import { Menu } from "@/types/menu";
 import { useToast } from "@/hooks/use-toast";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import { MenuPDF } from "@/components/MenuPDF";
+import { ShoppingListPDF } from "@/components/ShoppingListPDF";
+import { Download } from "lucide-react";
 
 const Index = () => {
   const [period, setPeriod] = useState<"weekly" | "biweekly">("weekly");
@@ -79,44 +83,76 @@ const Index = () => {
           </section>
 
           {menu && (
-            <section className="space-y-8">
-              {menu.days.map((day, index) => (
-                <Card key={index}>
-                  <CardHeader>
-                    <CardTitle>{day.day}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {day.meals.map((meal, mealIndex) => (
-                      <div key={mealIndex} className="space-y-4">
-                        <h3 className="font-semibold text-lg">{meal.meal}</h3>
-                        <p className="text-gray-600">{meal.description}</p>
-                        <div className="space-y-2">
-                          <h4 className="font-medium">Ingredientes:</h4>
-                          <ul className="list-disc pl-5 space-y-1">
-                            {meal.ingredients.map((ingredient, ingredientIndex) => (
-                              <li key={ingredientIndex}>
-                                {ingredient.name} - {ingredient.quantity} (R$ 
-                                {ingredient.estimatedCost.toFixed(2)})
-                              </li>
-                            ))}
-                          </ul>
+            <>
+              <section className="space-y-8">
+                {menu.days.map((day, index) => (
+                  <Card key={index}>
+                    <CardHeader>
+                      <CardTitle>{day.day}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      {day.meals.map((meal, mealIndex) => (
+                        <div key={mealIndex} className="space-y-4">
+                          <h3 className="font-semibold text-lg">{meal.meal}</h3>
+                          <p className="text-gray-600">{meal.description}</p>
+                          <div className="space-y-2">
+                            <h4 className="font-medium">Ingredientes:</h4>
+                            <ul className="list-disc pl-5 space-y-1">
+                              {meal.ingredients.map(
+                                (ingredient, ingredientIndex) => (
+                                  <li key={ingredientIndex}>
+                                    {ingredient.name} - {ingredient.quantity} (R$ 
+                                    {ingredient.estimatedCost.toFixed(2)})
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </CardContent>
+                  </Card>
+                ))}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Custo Total Estimado</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold">
+                      R$ {menu.totalCost.toFixed(2)}
+                    </p>
                   </CardContent>
                 </Card>
-              ))}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Custo Total Estimado</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-2xl font-bold">
-                    R$ {menu.totalCost.toFixed(2)}
-                  </p>
-                </CardContent>
-              </Card>
-            </section>
+              </section>
+
+              <section className="flex gap-4 justify-center">
+                <PDFDownloadLink
+                  document={<MenuPDF menu={menu} />}
+                  fileName="cardapio.pdf"
+                >
+                  {({ loading }) => (
+                    <Button disabled={loading}>
+                      <Download className="w-4 h-4 mr-2" />
+                      {loading ? "Gerando PDF..." : "Baixar Cardápio em PDF"}
+                    </Button>
+                  )}
+                </PDFDownloadLink>
+
+                <PDFDownloadLink
+                  document={<ShoppingListPDF menu={menu} />}
+                  fileName="lista-de-compras.pdf"
+                >
+                  {({ loading }) => (
+                    <Button disabled={loading}>
+                      <Download className="w-4 h-4 mr-2" />
+                      {loading
+                        ? "Gerando PDF..."
+                        : "Baixar Lista de Compras em PDF"}
+                    </Button>
+                  )}
+                </PDFDownloadLink>
+              </section>
+            </>
           )}
         </div>
       </div>
