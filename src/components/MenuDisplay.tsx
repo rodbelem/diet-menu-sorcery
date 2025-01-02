@@ -36,23 +36,22 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
             <ShoppingBag className="w-4 h-4" />
             Lista de Compras
           </Button>
-          <div>
-            <PDFDownloadLink
-              document={<MenuPDF menu={menu} />}
-              fileName="cardapio.pdf"
-            >
-              {({ loading }) => (
-                <Button
-                  variant="outline"
-                  disabled={loading}
-                  className="flex items-center gap-2"
-                >
-                  <FileDown className="w-4 h-4" />
-                  {loading ? "Gerando PDF..." : "Baixar Cardápio PDF"}
-                </Button>
-              )}
-            </PDFDownloadLink>
-          </div>
+          <PDFDownloadLink
+            document={<MenuPDF menu={menu} />}
+            fileName="cardapio.pdf"
+            className="inline-block"
+          >
+            {({ loading }) => (
+              <Button
+                variant="outline"
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                <FileDown className="w-4 h-4" />
+                {loading ? "Gerando PDF..." : "Baixar Cardápio PDF"}
+              </Button>
+            )}
+          </PDFDownloadLink>
         </div>
       </div>
 
