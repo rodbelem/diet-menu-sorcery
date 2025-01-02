@@ -7,7 +7,6 @@ import { Menu } from "@/types/menu";
 import { useToast } from "@/hooks/use-toast";
 import { GenerateMenuButton } from "@/components/GenerateMenuButton";
 import { MenuDisplay } from "@/components/MenuDisplay";
-import { PriceScraper } from "@/components/PriceScraper";
 
 const Index = () => {
   const [period, setPeriod] = useState<"weekly" | "biweekly">("weekly");
@@ -93,8 +92,6 @@ const Index = () => {
         </header>
 
         <div className="max-w-4xl mx-auto space-y-6 md:space-y-8">
-          <PriceScraper />
-
           <Card className="border-0 shadow-nutri overflow-hidden bg-white/50 backdrop-blur-sm">
             <CardContent className="p-4 md:p-8">
               <PdfUploader onContentExtracted={setPdfContent} />

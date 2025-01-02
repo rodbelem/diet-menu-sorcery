@@ -5,6 +5,7 @@ import { PDFDownloadLink } from "@react-pdf/renderer";
 import { MenuPDF } from "@/components/MenuPDF";
 import { ShoppingListPDF } from "@/components/ShoppingListPDF";
 import { Menu } from "@/types/menu";
+import React from "react";
 
 interface MenuDisplayProps {
   menu: Menu;
@@ -22,9 +23,11 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
             fileName="cardapio.pdf"
           >
             {({ loading }) => (
-              <Button disabled={loading} className="gap-2">
-                <Download className="w-4 h-4" />
-                {loading ? "Gerando PDF..." : "Baixar Cardápio"}
+              <Button disabled={loading} className="gap-2" asChild>
+                <div>
+                  <Download className="w-4 h-4" />
+                  {loading ? "Gerando PDF..." : "Baixar Cardápio"}
+                </div>
               </Button>
             )}
           </PDFDownloadLink>
@@ -34,9 +37,11 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
             fileName="lista-compras.pdf"
           >
             {({ loading }) => (
-              <Button disabled={loading} variant="outline" className="gap-2">
-                <ShoppingBag className="w-4 h-4" />
-                {loading ? "Gerando PDF..." : "Lista de Compras"}
+              <Button disabled={loading} variant="outline" className="gap-2" asChild>
+                <div>
+                  <ShoppingBag className="w-4 h-4" />
+                  {loading ? "Gerando PDF..." : "Lista de Compras"}
+                </div>
               </Button>
             )}
           </PDFDownloadLink>
@@ -50,13 +55,13 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
         <CardContent>
           {menu.days.map((day, dayIndex) => (
             <div key={dayIndex} className="mb-4">
-              <h2 className="text-xl font-bold">{day.name}</h2>
+              <h2 className="text-xl font-bold">{day.dayName}</h2>
               <div className="space-y-2">
                 {day.meals.map((meal, mealIndex) => (
                   <div key={mealIndex} className="flex justify-between items-center">
-                    <span>{meal.name}</span>
+                    <span>{meal.mealName}</span>
                     <Button
-                      onClick={() => onRegenerateMeal(dayIndex, mealIndex, meal.type)}
+                      onClick={() => onRegenerateMeal(dayIndex, mealIndex, meal.mealType)}
                       disabled={regeneratingMeal === `${dayIndex}-${mealIndex}`}
                       variant="outline"
                     >
