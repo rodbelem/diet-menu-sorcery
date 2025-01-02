@@ -1,26 +1,25 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { Buffer } from "https://deno.land/std@0.168.0/node/buffer.ts";
-import OpenAI from 'https://esm.sh/openai@4.28.0'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import OpenAI from "https://esm.sh/openai@4.28.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
     const openai = new OpenAI({
-      apiKey: Deno.env.get('OPENAI_API_KEY'),
+      apiKey: Deno.env.get('OPENAI_API_KEY')
     });
 
     const { pdfBase64 } = await req.json();
-    const pdfBuffer = Buffer.from(pdfBase64, 'base64');
 
+    // Enviar o conteúdo do PDF para a OpenAI
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -30,7 +29,7 @@ serve(async (req) => {
         },
         {
           role: "user",
-          content: pdfBuffer.toString()
+          content: `Este é um plano alimentar em formato base64. Por favor, extraia e formate as informações relevantes: ${pdfBase64}`
         }
       ],
     });
@@ -42,7 +41,7 @@ serve(async (req) => {
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
-    )
+    );
   } catch (error) {
     console.error('Error:', error);
     return new Response(
@@ -51,6 +50,6 @@ serve(async (req) => {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
-    )
+    );
   }
-})
+});

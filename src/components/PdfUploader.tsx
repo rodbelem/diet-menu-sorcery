@@ -17,9 +17,21 @@ export const PdfUploader = ({ onContentExtracted }: PdfUploaderProps) => {
     try {
       console.log('Iniciando processamento do PDF com OpenAI...');
       
-      // Converter o arquivo para base64
-      const arrayBuffer = await file.arrayBuffer();
-      const base64 = Buffer.from(arrayBuffer).toString('base64');
+      // Converter o arquivo para base64 usando FileReader
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          if (typeof reader.result === 'string') {
+            // Remove o prefixo data:application/pdf;base64,
+            const base64String = reader.result.split(',')[1];
+            resolve(base64String);
+          } else {
+            reject(new Error('Falha ao converter PDF para base64'));
+          }
+        };
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
       
       console.log('PDF convertido para base64, chamando função do Supabase...');
       
