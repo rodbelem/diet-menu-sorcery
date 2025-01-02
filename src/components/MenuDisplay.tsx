@@ -16,6 +16,10 @@ interface MenuDisplayProps {
 export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDisplayProps) => {
   const navigate = useNavigate();
 
+  if (!menu || !menu.days) {
+    return null;
+  }
+
   const handleShoppingListClick = () => {
     navigate("/lista-compras", { state: { menu } });
   };
