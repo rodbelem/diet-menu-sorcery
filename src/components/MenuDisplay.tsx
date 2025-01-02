@@ -23,12 +23,10 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
             fileName="cardapio.pdf"
           >
             {({ loading }) => (
-              <div>
-                <Button disabled={loading} className="gap-2">
-                  <Download className="w-4 h-4" />
-                  {loading ? "Gerando PDF..." : "Baixar Cardápio"}
-                </Button>
-              </div>
+              <Button disabled={loading} className="gap-2">
+                <Download className="w-4 h-4" />
+                {loading ? "Gerando PDF..." : "Baixar Cardápio"}
+              </Button>
             )}
           </PDFDownloadLink>
 
@@ -37,12 +35,10 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
             fileName="lista-compras.pdf"
           >
             {({ loading }) => (
-              <div>
-                <Button disabled={loading} variant="outline" className="gap-2">
-                  <ShoppingBag className="w-4 h-4" />
-                  {loading ? "Gerando PDF..." : "Lista de Compras"}
-                </Button>
-              </div>
+              <Button disabled={loading} variant="outline" className="gap-2">
+                <ShoppingBag className="w-4 h-4" />
+                {loading ? "Gerando PDF..." : "Lista de Compras"}
+              </Button>
             )}
           </PDFDownloadLink>
         </div>
@@ -55,12 +51,14 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
         <CardContent>
           {menu.days.map((day, dayIndex) => (
             <div key={dayIndex} className="mb-8">
-              <h2 className="text-xl font-bold mb-4">{day.day}</h2>
+              <h2 className="text-xl font-bold mb-4 text-primary-dark bg-nutri-green p-3 rounded-md">
+                {day.day}
+              </h2>
               <div className="space-y-4">
                 {day.meals.map((meal, mealIndex) => (
-                  <div key={mealIndex} className="bg-white p-4 rounded-lg shadow-sm">
+                  <div key={mealIndex} className="bg-white p-4 rounded-lg shadow-nutri">
                     <div className="flex justify-between items-center mb-2">
-                      <h3 className="text-lg font-semibold">{meal.meal}</h3>
+                      <h3 className="text-lg font-semibold text-primary">{meal.meal}</h3>
                       <Button
                         onClick={() => onRegenerateMeal(dayIndex, mealIndex, meal.meal)}
                         disabled={regeneratingMeal === `${dayIndex}-${mealIndex}`}
@@ -70,18 +68,21 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
                         {regeneratingMeal === `${dayIndex}-${mealIndex}` ? (
                           <RefreshCw className="animate-spin w-4 h-4" />
                         ) : (
-                          "Regenerar"
+                          "Gerar outra opção"
                         )}
                       </Button>
                     </div>
-                    <p className="text-gray-600 mb-2">{meal.description}</p>
-                    <div className="space-y-1">
-                      {meal.ingredients.map((ingredient, index) => (
-                        <div key={index} className="text-sm text-gray-500 flex justify-between">
-                          <span>{ingredient.name}</span>
-                          <span>{ingredient.quantity}</span>
-                        </div>
-                      ))}
+                    <p className="text-gray-600 mb-4">{meal.description}</p>
+                    <div className="bg-nutri-gray p-3 rounded-md">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-2">Ingredientes:</h4>
+                      <div className="space-y-2">
+                        {meal.ingredients.map((ingredient, index) => (
+                          <div key={index} className="text-sm text-gray-600 flex justify-between items-center">
+                            <span>{ingredient.name}</span>
+                            <span className="text-primary">{ingredient.quantity}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ))}
