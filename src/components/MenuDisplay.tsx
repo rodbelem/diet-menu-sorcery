@@ -51,7 +51,7 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
         <CardContent>
           {menu.days.map((day, dayIndex) => (
             <div key={dayIndex} className="mb-8">
-              <h2 className="text-xl font-bold mb-4 text-primary-dark bg-nutri-green p-3 rounded-md">
+              <h2 className="text-xl font-bold mb-4 text-black bg-nutri-green p-3 rounded-md">
                 {day.day}
               </h2>
               <div className="space-y-4">
@@ -79,7 +79,7 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
                         {meal.ingredients.map((ingredient, index) => (
                           <div key={index} className="text-sm text-gray-600 flex justify-between items-center">
                             <span>{ingredient.name}</span>
-                            <span className="text-primary">{ingredient.quantity}</span>
+                            <span className="text-black">{ingredient.quantity}</span>
                           </div>
                         ))}
                       </div>
