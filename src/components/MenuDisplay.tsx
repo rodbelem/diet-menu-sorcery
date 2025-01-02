@@ -23,10 +23,12 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
             fileName="cardapio.pdf"
           >
             {({ loading }) => (
-              <Button disabled={loading} className="gap-2">
-                <Download className="w-4 h-4" />
-                {loading ? "Gerando PDF..." : "Baixar Cardápio"}
-              </Button>
+              <div>
+                <Button disabled={loading} className="gap-2">
+                  <Download className="w-4 h-4" />
+                  {loading ? "Gerando PDF..." : "Baixar Cardápio"}
+                </Button>
+              </div>
             )}
           </PDFDownloadLink>
 
@@ -35,10 +37,12 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
             fileName="lista-compras.pdf"
           >
             {({ loading }) => (
-              <Button disabled={loading} variant="outline" className="gap-2">
-                <ShoppingBag className="w-4 h-4" />
-                {loading ? "Gerando PDF..." : "Lista de Compras"}
-              </Button>
+              <div>
+                <Button disabled={loading} variant="outline" className="gap-2">
+                  <ShoppingBag className="w-4 h-4" />
+                  {loading ? "Gerando PDF..." : "Lista de Compras"}
+                </Button>
+              </div>
             )}
           </PDFDownloadLink>
         </div>
@@ -50,23 +54,35 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
         </CardHeader>
         <CardContent>
           {menu.days.map((day, dayIndex) => (
-            <div key={dayIndex} className="mb-4">
-              <h2 className="text-xl font-bold">{day.day}</h2>
-              <div className="space-y-2">
+            <div key={dayIndex} className="mb-8">
+              <h2 className="text-xl font-bold mb-4">{day.day}</h2>
+              <div className="space-y-4">
                 {day.meals.map((meal, mealIndex) => (
-                  <div key={mealIndex} className="flex justify-between items-center">
-                    <span>{meal.meal}</span>
-                    <Button
-                      onClick={() => onRegenerateMeal(dayIndex, mealIndex, meal.meal)}
-                      disabled={regeneratingMeal === `${dayIndex}-${mealIndex}`}
-                      variant="outline"
-                    >
-                      {regeneratingMeal === `${dayIndex}-${mealIndex}` ? (
-                        <RefreshCw className="animate-spin w-4 h-4" />
-                      ) : (
-                        "Regenerar"
-                      )}
-                    </Button>
+                  <div key={mealIndex} className="bg-white p-4 rounded-lg shadow-sm">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-lg font-semibold">{meal.meal}</h3>
+                      <Button
+                        onClick={() => onRegenerateMeal(dayIndex, mealIndex, meal.meal)}
+                        disabled={regeneratingMeal === `${dayIndex}-${mealIndex}`}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {regeneratingMeal === `${dayIndex}-${mealIndex}` ? (
+                          <RefreshCw className="animate-spin w-4 h-4" />
+                        ) : (
+                          "Regenerar"
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-gray-600 mb-2">{meal.description}</p>
+                    <div className="space-y-1">
+                      {meal.ingredients.map((ingredient, index) => (
+                        <div key={index} className="text-sm text-gray-500 flex justify-between">
+                          <span>{ingredient.name}</span>
+                          <span>{ingredient.quantity}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
