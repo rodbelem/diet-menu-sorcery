@@ -20,23 +20,36 @@ const getOpenAIClient = async () => {
 export const generateMenu = async (pdfContent: string, period: "weekly" | "biweekly") => {
   const openai = await getOpenAIClient();
   
-  const prompt = `Com base no seguinte plano nutricional:
+  const prompt = `Analise cuidadosamente o seguinte planejamento alimentar:
   
   ${pdfContent}
   
-  IMPORTANTE: Você DEVE gerar um cardápio que siga ESTRITAMENTE o plano nutricional fornecido, respeitando:
-  - Todas as quantidades e porções especificadas
-  - Todos os tipos de alimentos permitidos e restrições
-  - Todas as recomendações e regras nutricionais
-  - Os horários e frequência das refeições
+  INSTRUÇÕES CRÍTICAS:
+  1. PRIMEIRO, identifique no planejamento alimentar:
+     - Exatamente quais refeições estão prescritas (desjejum, colação, almoço, lanche, jantar, ceia, etc)
+     - Os horários específicos de cada refeição
+     - As quantidades exatas de cada alimento em cada refeição
+     - Os tipos específicos de alimentos permitidos e suas variações
+     - Todas as restrições alimentares mencionadas
   
-  Gere um cardápio ${period === "weekly" ? "semanal (7 dias completos)" : "quinzenal (15 dias completos)"} detalhado com as seguintes informações:
-  - Refeições para cada dia informando o peso de cada ingrediente
-  - O cardápio DEVE começar em uma segunda-feira e incluir TODOS os dias até ${period === "weekly" ? "domingo" : "o domingo da segunda semana"}
-  - Para cada dia, inclua TODAS as refeições (café da manhã, almoço, lanche da tarde, jantar, ceia)
-  - Cada refeição DEVE seguir EXATAMENTE as quantidades e tipos de alimentos especificados no plano nutricional
+  2. DEPOIS, gere um cardápio que deve OBRIGATORIAMENTE:
+     - Incluir TODAS as refeições que aparecem no planejamento, nos mesmos horários
+     - Usar SOMENTE os alimentos e quantidades que estão EXPLICITAMENTE permitidos no planejamento
+     - NUNCA sugerir alimentos que não estão listados no planejamento (exemplo: se o planejamento especifica "arroz branco", NUNCA sugira "arroz integral")
+     - Respeitar TODAS as restrições alimentares mencionadas
+     - Manter as mesmas quantidades e medidas especificadas no planejamento
+  
+  3. FINALMENTE, antes de retornar o cardápio:
+     - Verifique se cada refeição sugerida está EXATAMENTE de acordo com o planejamento
+     - Confirme se as quantidades e medidas estão corretas
+     - Certifique-se que nenhum alimento não permitido foi incluído
+  
+  Gere um cardápio ${period === "weekly" ? "semanal (7 dias completos)" : "quinzenal (15 dias completos)"} que:
+  - Comece na segunda-feira e vá até ${period === "weekly" ? "domingo" : "o domingo da segunda semana"}
+  - Inclua TODAS as refeições especificadas no planejamento alimentar para cada dia
+  - Mantenha EXATAMENTE as mesmas quantidades e tipos de alimentos do planejamento
 
-  Abaixo disso, preciso que você me gere uma lista completa de compras dos ingredientes necessários para todas as refeições serem feitas. Adicione uma estimativa de custo para cada conjunto de ingrediente (em reais) e uma estimativa de custo total.
+  Após gerar o cardápio, crie uma lista de compras com todos os ingredientes necessários, incluindo uma estimativa de custo para cada item e o custo total.
   
   Retorne os dados no seguinte formato JSON:
   {
@@ -45,7 +58,7 @@ export const generateMenu = async (pdfContent: string, period: "weekly" | "biwee
         "day": "Segunda-feira",
         "meals": [
           {
-            "meal": "Café da manhã",
+            "meal": "Nome da refeição conforme está no planejamento",
             "description": "Descrição da refeição",
             "ingredients": [
               {
@@ -81,16 +94,27 @@ export const generateMenu = async (pdfContent: string, period: "weekly" | "biwee
 export const regenerateMeal = async (pdfContent: string, mealType: string) => {
   const openai = await getOpenAIClient();
   
-  const prompt = `Com base no seguinte plano nutricional:
+  const prompt = `Analise cuidadosamente o seguinte planejamento alimentar:
   
   ${pdfContent}
   
-  IMPORTANTE: Você DEVE gerar uma refeição que siga ESTRITAMENTE o plano nutricional fornecido, respeitando:
-  - Todas as quantidades e porções especificadas
-  - Todos os tipos de alimentos permitidos e restrições
-  - Todas as recomendações e regras nutricionais
+  INSTRUÇÕES CRÍTICAS:
+  1. PRIMEIRO, identifique no planejamento alimentar:
+     - A refeição específica "${mealType}" e seu horário
+     - As quantidades exatas de cada alimento permitido nesta refeição
+     - Os tipos específicos de alimentos permitidos e suas variações
+     - Todas as restrições alimentares mencionadas
   
-  Gere uma nova opção para a refeição "${mealType}" que seja diferente da anterior mas ainda siga EXATAMENTE o plano nutricional.
+  2. DEPOIS, gere uma nova opção para esta refeição que deve OBRIGATORIAMENTE:
+     - Usar SOMENTE os alimentos e quantidades que estão EXPLICITAMENTE permitidos no planejamento para esta refeição
+     - NUNCA sugerir alimentos que não estão listados no planejamento
+     - Respeitar TODAS as restrições alimentares mencionadas
+     - Manter as mesmas quantidades e medidas especificadas no planejamento
+  
+  3. FINALMENTE, antes de retornar a sugestão:
+     - Verifique se a refeição sugerida está EXATAMENTE de acordo com o planejamento
+     - Confirme se as quantidades e medidas estão corretas
+     - Certifique-se que nenhum alimento não permitido foi incluído
   
   Retorne os dados no seguinte formato JSON:
   {
