@@ -27,20 +27,21 @@ serve(async (req) => {
       messages: [
         {
           role: "system",
-          content: `Você é um assistente especializado em extrair informações precisas de planos alimentares.
+          content: `Você é um assistente especializado em extrair informações EXATAS de planos alimentares.
           
           REGRAS CRÍTICAS:
-          1. EXTRAIA EXATAMENTE os alimentos e quantidades mencionados no plano, sem substituições
-          2. NUNCA sugira alternativas ou variações que não estejam explicitamente no plano
-          3. MANTENHA os tipos exatos de alimentos (ex: se diz arroz branco, não mude para integral)
-          4. PRESERVE todas as medidas e quantidades exatamente como especificadas
-          5. LISTE todas as refeições do dia com seus horários exatos
+          1. NUNCA altere ou substitua NENHUMA unidade de medida
+          2. Mantenha EXATAMENTE as mesmas medidas (colher, grama, ml, etc) que estão no plano
+          3. NUNCA converta unidades (ex: não converta colheres para xícaras)
+          4. PRESERVE os tipos exatos de alimentos (ex: se diz arroz branco, não mude para integral)
+          5. COPIE literalmente as quantidades como estão no plano
+          6. Se uma medida específica é mencionada (ex: "colher de sopa"), use EXATAMENTE essa medida
           
-          Retorne apenas o conteúdo extraído, sem interpretações ou sugestões.`
+          Retorne apenas o conteúdo extraído, mantendo fielmente todas as especificações originais.`
         },
         {
           role: "user",
-          content: `Extraia o conteúdo exato deste plano alimentar: ${pdfBase64}`
+          content: `Extraia o conteúdo exato deste plano alimentar, mantendo todas as medidas originais: ${pdfBase64}`
         }
       ],
     });
@@ -57,12 +58,12 @@ serve(async (req) => {
           content: `Você é um nutricionista especializado em criar cardápios.
           
           REGRAS CRÍTICAS para gerar o cardápio:
-          1. Use SOMENTE os alimentos e quantidades EXATAMENTE como especificados no plano
-          2. NUNCA faça substituições ou sugestões alternativas
-          3. MANTENHA os tipos específicos de alimentos (ex: arroz branco deve permanecer arroz branco)
-          4. PRESERVE todas as medidas e quantidades exatamente como indicadas
-          5. INCLUA todas as refeições para os 7 dias da semana
-          6. RESPEITE os horários especificados para cada refeição
+          1. Use SOMENTE as unidades de medida EXATAMENTE como especificadas no plano
+          2. NUNCA faça conversões de unidades (ex: não converta colheres para xícaras)
+          3. Mantenha os tipos específicos de alimentos (ex: arroz branco deve permanecer arroz branco)
+          4. Use as medidas exatas mencionadas (ex: "colher de sopa" deve permanecer "colher de sopa")
+          5. NUNCA substitua ingredientes ou suas medidas
+          6. Se uma quantidade específica é mencionada (ex: "2 colheres de sopa"), use EXATAMENTE essa quantidade
           
           Retorne os dados no formato JSON especificado.`
         },
@@ -70,7 +71,7 @@ serve(async (req) => {
           role: "user",
           content: `Com base neste plano alimentar extraído: ${extractedContent}
           
-          Gere um cardápio completo para 7 dias que siga EXATAMENTE as especificações do plano.
+          Gere um cardápio completo que siga EXATAMENTE as especificações do plano.
           
           O cardápio deve ser retornado no seguinte formato JSON:
           {
