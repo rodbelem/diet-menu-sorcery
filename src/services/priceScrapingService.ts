@@ -7,6 +7,31 @@ interface ScrapedProduct {
   unit: string;
 }
 
+interface Database {
+  public: {
+    Tables: {
+      ingredients: {
+        Row: {
+          id: string;
+          name: string;
+          price_per_kg: number | null;
+          price_per_unit: number | null;
+          measurement_unit: string;
+          last_update: string;
+          created_at: string;
+        };
+        Insert: {
+          name: string;
+          price_per_kg?: number | null;
+          price_per_unit?: number | null;
+          measurement_unit: string;
+          last_update?: string;
+        };
+      };
+    };
+  };
+}
+
 export class PriceScrapingService {
   private static firecrawlApp: FirecrawlApp | null = null;
 
@@ -79,7 +104,7 @@ export class PriceScrapingService {
             last_update: new Date().toISOString()
           })),
           { onConflict: 'name' }
-        );
+        ) as any; // Type assertion needed due to Supabase client typing limitations
 
       if (error) throw error;
 
