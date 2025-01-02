@@ -24,10 +24,17 @@ export const generateMenu = async (pdfContent: string, period: "weekly" | "biwee
   
   ${pdfContent}
   
+  IMPORTANTE: Você DEVE gerar um cardápio que siga ESTRITAMENTE o plano nutricional fornecido, respeitando:
+  - Todas as quantidades e porções especificadas
+  - Todos os tipos de alimentos permitidos e restrições
+  - Todas as recomendações e regras nutricionais
+  - Os horários e frequência das refeições
+  
   Gere um cardápio ${period === "weekly" ? "semanal (7 dias completos)" : "quinzenal (15 dias completos)"} detalhado com as seguintes informações:
   - Refeições para cada dia informando o peso de cada ingrediente
   - O cardápio DEVE começar em uma segunda-feira e incluir TODOS os dias até ${period === "weekly" ? "domingo" : "o domingo da segunda semana"}
   - Para cada dia, inclua TODAS as refeições (café da manhã, almoço, lanche da tarde, jantar, ceia)
+  - Cada refeição DEVE seguir EXATAMENTE as quantidades e tipos de alimentos especificados no plano nutricional
 
   Abaixo disso, preciso que você me gere uma lista completa de compras dos ingredientes necessários para todas as refeições serem feitas. Adicione uma estimativa de custo para cada conjunto de ingrediente (em reais) e uma estimativa de custo total.
   
@@ -78,7 +85,12 @@ export const regenerateMeal = async (pdfContent: string, mealType: string) => {
   
   ${pdfContent}
   
-  Gere uma nova opção para a refeição "${mealType}" que seja diferente da anterior mas ainda siga o plano nutricional.
+  IMPORTANTE: Você DEVE gerar uma refeição que siga ESTRITAMENTE o plano nutricional fornecido, respeitando:
+  - Todas as quantidades e porções especificadas
+  - Todos os tipos de alimentos permitidos e restrições
+  - Todas as recomendações e regras nutricionais
+  
+  Gere uma nova opção para a refeição "${mealType}" que seja diferente da anterior mas ainda siga EXATAMENTE o plano nutricional.
   
   Retorne os dados no seguinte formato JSON:
   {
