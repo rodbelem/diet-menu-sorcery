@@ -1,11 +1,10 @@
-import { Menu, MenuItem } from "@/types/menu";
+import { Menu } from "@/types/menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Download, ShoppingBag } from "lucide-react";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { MenuPDF } from "@/components/MenuPDF";
 import { ShoppingListPDF } from "@/components/ShoppingListPDF";
-import { Download, ShoppingBag } from "lucide-react";
 
 interface MenuDisplayProps {
   menu: Menu;
