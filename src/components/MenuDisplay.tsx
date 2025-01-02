@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Download, ShoppingBag } from "lucide-react";
-import { PDFDownloadLink, PDFDownloadLinkProps } from "@react-pdf/renderer";
+import { PDFDownloadLink } from "@react-pdf/renderer";
 import { MenuPDF } from "@/components/MenuPDF";
 import { ShoppingListPDF } from "@/components/ShoppingListPDF";
 import { Menu } from "@/types/menu";
@@ -21,24 +21,26 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
           <PDFDownloadLink
             document={<MenuPDF menu={menu} />}
             fileName="cardapio.pdf"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2"
           >
             {({ loading }) => (
-              <Button disabled={loading} className="gap-2" type="button">
+              <>
                 <Download className="w-4 h-4" />
                 {loading ? "Gerando PDF..." : "Baixar Cardápio"}
-              </Button>
+              </>
             )}
           </PDFDownloadLink>
 
           <PDFDownloadLink
             document={<ShoppingListPDF menu={menu} />}
             fileName="lista-compras.pdf"
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 gap-2"
           >
             {({ loading }) => (
-              <Button disabled={loading} variant="outline" className="gap-2" type="button">
+              <>
                 <ShoppingBag className="w-4 h-4" />
                 {loading ? "Gerando PDF..." : "Lista de Compras"}
-              </Button>
+              </>
             )}
           </PDFDownloadLink>
         </div>
@@ -93,4 +95,4 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
       </Card>
     </div>
   );
-};
+}

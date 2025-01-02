@@ -15,8 +15,8 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 5 * 60 * 1000,
       retry: 1,
-      // Adiciona cache
-      cacheTime: 10 * 60 * 1000,
+      // Usando gcTime ao invés de cacheTime (nova API do TanStack Query)
+      gcTime: 10 * 60 * 1000,
     },
   },
 });
