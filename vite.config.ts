@@ -26,10 +26,7 @@ export default defineConfig(({ mode }) => ({
           'ui-vendor': ['@radix-ui/react-toast', '@radix-ui/react-tooltip'],
           'pdf-vendor': ['@react-pdf/renderer', 'pdfjs-dist']
         }
-      },
-      external: [
-        'pdfjs-dist/build/pdf.worker.entry'
-      ]
+      }
     }
   }
 }));
