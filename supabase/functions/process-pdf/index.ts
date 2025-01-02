@@ -1,6 +1,5 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import OpenAI from "https://esm.sh/openai@4.28.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,15 +12,14 @@ serve(async (req) => {
   }
 
   try {
+    const { pdfBase64 } = await req.json();
     const openai = new OpenAI({
       apiKey: Deno.env.get('OPENAI_API_KEY')
     });
 
-    const { pdfBase64 } = await req.json();
-
     console.log('Iniciando processamento do PDF...');
 
-    // Primeiro, vamos extrair o conteúdo exato do plano alimentar
+    // First, let's extract the content in smaller chunks
     const extractionResponse = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -37,19 +35,22 @@ serve(async (req) => {
           5. COPIE literalmente as quantidades como estão no plano
           6. Se uma medida específica é mencionada (ex: "colher de sopa"), use EXATAMENTE essa medida
           
-          Retorne apenas o conteúdo extraído, mantendo fielmente todas as especificações originais.`
+          Retorne apenas o conteúdo extraído, mantendo fielmente todas as especificações originais.
+          
+          IMPORTANTE: Retorne o conteúdo de forma CONCISA, removendo qualquer texto desnecessário ou decorativo.`
         },
         {
           role: "user",
           content: `Extraia o conteúdo exato deste plano alimentar, mantendo todas as medidas originais: ${pdfBase64}`
         }
       ],
+      max_tokens: 4000
     });
 
     const extractedContent = extractionResponse.choices[0].message.content;
     console.log('Conteúdo extraído com sucesso, gerando cardápio...');
 
-    // Agora, vamos gerar o cardápio baseado no conteúdo extraído
+    // Now generate the menu with the extracted content
     const menuResponse = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -97,7 +98,8 @@ serve(async (req) => {
           }`
         }
       ],
-      response_format: { type: "json_object" }
+      response_format: { type: "json_object" },
+      max_tokens: 4000
     });
 
     console.log('Cardápio gerado com sucesso');
