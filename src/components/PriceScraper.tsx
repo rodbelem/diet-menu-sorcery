@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PriceScrapingService } from '@/services/priceScrapingService';
@@ -9,28 +8,26 @@ import { RefreshCw } from 'lucide-react';
 
 export const PriceScraper = () => {
   const { toast } = useToast();
-  const [url, setUrl] = useState('https://www.paodeacucar.com/');
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdatePrices = async () => {
     setIsLoading(true);
     setProgress(25);
 
     try {
-      const scrapeResult = await PriceScrapingService.scrapeProducts(url);
+      const scrapeResult = await PriceScrapingService.scrapeProducts();
       setProgress(50);
 
       if (!scrapeResult.success || !scrapeResult.data) {
-        throw new Error(scrapeResult.error || 'Failed to scrape products');
+        throw new Error(scrapeResult.error || 'Falha ao obter preços dos produtos');
       }
 
       setProgress(75);
       const updateResult = await PriceScrapingService.updatePrices(scrapeResult.data);
       
       if (!updateResult.success) {
-        throw new Error(updateResult.error || 'Failed to update prices');
+        throw new Error(updateResult.error || 'Falha ao atualizar preços');
       }
 
       setProgress(100);
@@ -40,7 +37,7 @@ export const PriceScraper = () => {
         duration: 3000,
       });
     } catch (error) {
-      console.error('Error in price scraping:', error);
+      console.error('Erro ao atualizar preços:', error);
       toast({
         title: "Erro",
         description: error instanceof Error ? error.message : "Falha ao atualizar preços",
@@ -61,29 +58,17 @@ export const PriceScraper = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4 md:p-6">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Input
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              className="w-full"
-              placeholder="URL do supermercado"
-              required
-            />
-          </div>
-          {isLoading && (
-            <Progress value={progress} className="w-full" />
-          )}
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="w-full md:w-auto rounded-full bg-gradient-to-r from-primary to-primary-dark hover:opacity-90 transition-all duration-300"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            {isLoading ? "Atualizando preços..." : "Atualizar Preços"}
-          </Button>
-        </form>
+        {isLoading && (
+          <Progress value={progress} className="w-full mb-4" />
+        )}
+        <Button
+          onClick={handleUpdatePrices}
+          disabled={isLoading}
+          className="w-full md:w-auto rounded-full bg-gradient-to-r from-primary to-primary-dark hover:opacity-90 transition-all duration-300"
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+          {isLoading ? "Atualizando preços..." : "Atualizar Preços"}
+        </Button>
       </CardContent>
     </Card>
   );

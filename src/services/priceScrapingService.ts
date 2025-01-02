@@ -34,6 +34,7 @@ interface Database {
 
 export class PriceScrapingService {
   private static firecrawlApp: FirecrawlApp | null = null;
+  private static readonly SUPERMARKET_URL = 'https://www.paodeacucar.com/';
 
   private static async initFirecrawl() {
     if (!this.firecrawlApp) {
@@ -42,7 +43,7 @@ export class PriceScrapingService {
       });
       
       if (error || !data?.secret) {
-        throw new Error('Failed to get Firecrawl API key');
+        throw new Error('Falha ao obter chave da API Firecrawl');
       }
       
       this.firecrawlApp = new FirecrawlApp({ apiKey: data.secret });
@@ -50,43 +51,39 @@ export class PriceScrapingService {
     return this.firecrawlApp;
   }
 
-  static async scrapeProducts(url: string): Promise<{ success: boolean; data?: ScrapedProduct[]; error?: string }> {
+  static async scrapeProducts(): Promise<{ success: boolean; data?: ScrapedProduct[]; error?: string }> {
     try {
       const firecrawl = await this.initFirecrawl();
       
-      const response = await firecrawl.crawlUrl(url, {
+      const response = await firecrawl.crawlUrl(this.SUPERMARKET_URL, {
         limit: 100,
-        scrapeOptions: {
-          selectors: {
-            products: {
-              selector: '.product-card',
-              type: 'list',
-              properties: {
-                name: '.product-title',
-                price: {
-                  selector: '.product-price',
-                  type: 'number'
-                },
-                unit: '.product-unit'
-              }
+        waitForSelector: '.product-card',
+        extractors: {
+          products: {
+            selector: '.product-card',
+            type: 'list',
+            data: {
+              name: { selector: '.product-title', type: 'text' },
+              price: { selector: '.product-price', type: 'number' },
+              unit: { selector: '.product-unit', type: 'text' }
             }
           }
         }
       });
 
       if (!response.success) {
-        return { success: false, error: 'Failed to scrape website' };
+        return { success: false, error: 'Falha ao obter dados do site' };
       }
 
       return {
         success: true,
-        data: response.data.products as ScrapedProduct[]
+        data: response.data as ScrapedProduct[]
       };
     } catch (error) {
-      console.error('Error scraping products:', error);
+      console.error('Erro ao obter preços:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Erro desconhecido'
       };
     }
   }
@@ -110,10 +107,10 @@ export class PriceScrapingService {
 
       return { success: true };
     } catch (error) {
-      console.error('Error updating prices:', error);
+      console.error('Erro ao atualizar preços:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to update prices'
+        error: error instanceof Error ? error.message : 'Falha ao atualizar preços'
       };
     }
   }
