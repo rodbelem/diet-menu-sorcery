@@ -4,8 +4,9 @@ import { Upload } from "lucide-react";
 import * as pdfjsLib from 'pdfjs-dist';
 import { useToast } from "@/hooks/use-toast";
 
-// Configuração do worker do pdf.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Using a local worker
+const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.entry');
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface PdfUploaderProps {
   onContentExtracted: (content: string) => void;
