@@ -1,14 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
-import * as pdfjsLib from 'pdfjs-dist';
 import { useToast } from "@/hooks/use-toast";
-
-// Configure worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'node_modules/pdfjs-dist/build/pdf.worker.mjs',
-  import.meta.url
-).toString();
+import { supabase } from "@/integrations/supabase/client";
 
 interface PdfUploaderProps {
   onContentExtracted: (content: string) => void;
@@ -19,32 +13,30 @@ export const PdfUploader = ({ onContentExtracted }: PdfUploaderProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const extractTextFromPdf = async (file: File): Promise<string> => {
+  const processPdfWithOpenAI = async (file: File): Promise<string> => {
     try {
-      console.log('Iniciando extração do PDF...');
+      console.log('Iniciando processamento do PDF com OpenAI...');
+      
+      // Converter o arquivo para base64
       const arrayBuffer = await file.arrayBuffer();
-      console.log('ArrayBuffer criado:', arrayBuffer.byteLength, 'bytes');
+      const base64 = Buffer.from(arrayBuffer).toString('base64');
       
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      console.log('PDF carregado, número de páginas:', pdf.numPages);
+      console.log('PDF convertido para base64, chamando função do Supabase...');
       
-      let fullText = '';
+      const { data, error } = await supabase.functions.invoke('process-pdf', {
+        body: { pdfBase64: base64 }
+      });
 
-      for (let i = 1; i <= pdf.numPages; i++) {
-        console.log('Processando página', i);
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(' ');
-        fullText += pageText + '\n';
+      if (error) {
+        console.error('Erro na função do Supabase:', error);
+        throw new Error('Erro ao processar o PDF');
       }
 
-      console.log('Extração concluída com sucesso');
-      return fullText;
+      console.log('PDF processado com sucesso pela OpenAI');
+      return data.content;
     } catch (error) {
-      console.error('Erro detalhado ao extrair texto do PDF:', error);
-      throw new Error('Não foi possível ler o conteúdo do PDF');
+      console.error('Erro detalhado ao processar PDF:', error);
+      throw new Error('Não foi possível processar o conteúdo do PDF');
     }
   };
 
@@ -56,16 +48,16 @@ export const PdfUploader = ({ onContentExtracted }: PdfUploaderProps) => {
       
       try {
         console.log('Arquivo selecionado:', file.name, file.size, 'bytes');
-        const extractedText = await extractTextFromPdf(file);
+        const extractedText = await processPdfWithOpenAI(file);
         onContentExtracted(extractedText);
         toast({
-          title: "PDF carregado com sucesso",
+          title: "PDF processado com sucesso",
           description: "O conteúdo do PDF foi extraído e está pronto para processamento.",
         });
       } catch (error) {
         console.error('Erro ao processar arquivo:', error);
         toast({
-          title: "Erro ao ler PDF",
+          title: "Erro ao processar PDF",
           description: "Não foi possível extrair o conteúdo do PDF. Tente novamente.",
           variant: "destructive",
         });
