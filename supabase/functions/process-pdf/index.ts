@@ -1,3 +1,4 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import OpenAI from "https://esm.sh/openai@4.28.0";
 
@@ -18,46 +19,60 @@ serve(async (req) => {
 
     const { pdfBase64 } = await req.json();
 
-    // Primeiro, vamos processar o PDF em partes menores para evitar o limite de tokens
-    const chunkSize = 30000; // Tamanho reduzido para garantir que não ultrapasse o limite
-    const chunks = [];
-    
-    for (let i = 0; i < pdfBase64.length; i += chunkSize) {
-      const chunk = pdfBase64.slice(i, i + chunkSize);
-      const chunkResponse = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "Você é um nutricionista especializado em extrair informações de planos alimentares. Extraia apenas as informações essenciais sobre refeições, porções e restrições desta parte do documento."
-          },
-          {
-            role: "user",
-            content: `Analise esta parte do plano alimentar e extraia as informações relevantes: ${chunk}`
-          }
-        ],
-      });
-      chunks.push(chunkResponse.choices[0].message.content);
-    }
+    console.log('Iniciando processamento do PDF...');
 
-    // Agora, vamos combinar e processar todas as informações extraídas
-    const combinedContent = chunks.join(' ');
-    
-    const finalResponse = await openai.chat.completions.create({
+    // Primeiro, vamos extrair o conteúdo exato do plano alimentar
+    const extractionResponse = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: `Você é um nutricionista especializado em criar cardápios. Com base nas informações extraídas do plano alimentar, crie um cardápio completo para 7 dias (segunda a domingo), seguindo EXATAMENTE as especificações do plano.
-
-          REGRAS IMPORTANTES:
-          1. O cardápio DEVE conter TODAS as refeições para os 7 dias da semana
-          2. Cada dia DEVE ter todas as refeições especificadas no plano (café da manhã, almoço, jantar, etc.)
-          3. Mantenha TODAS as quantidades e medidas exatamente como especificadas no plano
-          4. Inclua TODOS os detalhes de ingredientes e suas quantidades
-          5. Respeite TODAS as restrições alimentares mencionadas
+          content: `Você é um assistente especializado em extrair informações precisas de planos alimentares.
           
-          Retorne os dados no seguinte formato JSON:
+          REGRAS CRÍTICAS:
+          1. EXTRAIA EXATAMENTE os alimentos e quantidades mencionados no plano, sem substituições
+          2. NUNCA sugira alternativas ou variações que não estejam explicitamente no plano
+          3. MANTENHA os tipos exatos de alimentos (ex: se diz arroz branco, não mude para integral)
+          4. PRESERVE todas as medidas e quantidades exatamente como especificadas
+          5. LISTE todas as refeições do dia com seus horários exatos
+          
+          Retorne apenas o conteúdo extraído, sem interpretações ou sugestões.`
+        },
+        {
+          role: "user",
+          content: `Extraia o conteúdo exato deste plano alimentar: ${pdfBase64}`
+        }
+      ],
+    });
+
+    const extractedContent = extractionResponse.choices[0].message.content;
+    console.log('Conteúdo extraído com sucesso, gerando cardápio...');
+
+    // Agora, vamos gerar o cardápio baseado no conteúdo extraído
+    const menuResponse = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `Você é um nutricionista especializado em criar cardápios.
+          
+          REGRAS CRÍTICAS para gerar o cardápio:
+          1. Use SOMENTE os alimentos e quantidades EXATAMENTE como especificados no plano
+          2. NUNCA faça substituições ou sugestões alternativas
+          3. MANTENHA os tipos específicos de alimentos (ex: arroz branco deve permanecer arroz branco)
+          4. PRESERVE todas as medidas e quantidades exatamente como indicadas
+          5. INCLUA todas as refeições para os 7 dias da semana
+          6. RESPEITE os horários especificados para cada refeição
+          
+          Retorne os dados no formato JSON especificado.`
+        },
+        {
+          role: "user",
+          content: `Com base neste plano alimentar extraído: ${extractedContent}
+          
+          Gere um cardápio completo para 7 dias que siga EXATAMENTE as especificações do plano.
+          
+          O cardápio deve ser retornado no seguinte formato JSON:
           {
             "days": [
               {
@@ -68,8 +83,8 @@ serve(async (req) => {
                     "description": "Descrição detalhada",
                     "ingredients": [
                       {
-                        "name": "Nome do ingrediente",
-                        "quantity": "Quantidade exata",
+                        "name": "Nome do ingrediente (EXATAMENTE como está no plano)",
+                        "quantity": "Quantidade exata do plano",
                         "estimatedCost": 0.00
                       }
                     ]
@@ -79,28 +94,22 @@ serve(async (req) => {
             ],
             "totalCost": 0.00
           }`
-        },
-        {
-          role: "user",
-          content: `Crie um cardápio completo baseado nestas informações: ${combinedContent}`
         }
       ],
       response_format: { type: "json_object" }
     });
 
-    console.log('Processamento do OpenAI concluído com sucesso');
+    console.log('Cardápio gerado com sucesso');
     
     return new Response(
-      JSON.stringify({ content: finalResponse.choices[0].message.content }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
+      JSON.stringify({ content: menuResponse.choices[0].message.content }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (error) {
     console.error('Erro ao processar PDF:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
+      { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
