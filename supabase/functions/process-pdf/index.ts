@@ -8,7 +8,7 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -18,48 +18,86 @@ serve(async (req) => {
 
     const { pdfBase64 } = await req.json();
 
-    // First, let's get a concise summary of the PDF content
-    const summaryResponse = await openai.chat.completions.create({
+    // Primeiro, vamos processar o PDF em partes menores para evitar o limite de tokens
+    const chunkSize = 30000; // Tamanho reduzido para garantir que não ultrapasse o limite
+    const chunks = [];
+    
+    for (let i = 0; i < pdfBase64.length; i += chunkSize) {
+      const chunk = pdfBase64.slice(i, i + chunkSize);
+      const chunkResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "Você é um nutricionista especializado em extrair informações de planos alimentares. Extraia apenas as informações essenciais sobre refeições, porções e restrições desta parte do documento."
+          },
+          {
+            role: "user",
+            content: `Analise esta parte do plano alimentar e extraia as informações relevantes: ${chunk}`
+          }
+        ],
+      });
+      chunks.push(chunkResponse.choices[0].message.content);
+    }
+
+    // Agora, vamos combinar e processar todas as informações extraídas
+    const combinedContent = chunks.join(' ');
+    
+    const finalResponse = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: "You are a specialized nutritionist assistant. Your task is to extract and summarize the key information from nutrition plans, focusing only on the essential details about meals, portions, and restrictions."
+          content: `Você é um nutricionista especializado em criar cardápios. Com base nas informações extraídas do plano alimentar, crie um cardápio completo para 7 dias (segunda a domingo), seguindo EXATAMENTE as especificações do plano.
+
+          REGRAS IMPORTANTES:
+          1. O cardápio DEVE conter TODAS as refeições para os 7 dias da semana
+          2. Cada dia DEVE ter todas as refeições especificadas no plano (café da manhã, almoço, jantar, etc.)
+          3. Mantenha TODAS as quantidades e medidas exatamente como especificadas no plano
+          4. Inclua TODOS os detalhes de ingredientes e suas quantidades
+          5. Respeite TODAS as restrições alimentares mencionadas
+          
+          Retorne os dados no seguinte formato JSON:
+          {
+            "days": [
+              {
+                "day": "Segunda-feira",
+                "meals": [
+                  {
+                    "meal": "Nome da refeição",
+                    "description": "Descrição detalhada",
+                    "ingredients": [
+                      {
+                        "name": "Nome do ingrediente",
+                        "quantity": "Quantidade exata",
+                        "estimatedCost": 0.00
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "totalCost": 0.00
+          }`
         },
         {
           role: "user",
-          content: `Extract and summarize the key nutritional information from this PDF content, focusing only on meals, portions, and restrictions: ${pdfBase64.substring(0, 60000)}`
+          content: `Crie um cardápio completo baseado nestas informações: ${combinedContent}`
         }
       ],
+      response_format: { type: "json_object" }
     });
 
-    const summary = summaryResponse.choices[0].message.content;
-
-    // Now, let's process the summary to extract structured information
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are a nutritionist assistant that helps format nutrition plans into structured data. Format the information into clear, specific meal plans with exact portions and ingredients."
-        },
-        {
-          role: "user",
-          content: `Based on this nutrition plan summary, create a structured meal plan: ${summary}`
-        }
-      ],
-    });
-
-    console.log('OpenAI processing completed successfully');
+    console.log('Processamento do OpenAI concluído com sucesso');
     
     return new Response(
-      JSON.stringify({ content: response.choices[0].message.content }),
+      JSON.stringify({ content: finalResponse.choices[0].message.content }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Erro ao processar PDF:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
