@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw, Download, ShoppingBag } from "lucide-react";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { MenuPDF } from "@/components/MenuPDF";
-import { ShoppingListPDF } from "@/components/ShoppingListPDF";
 import { Menu } from "@/types/menu";
+import { useNavigate } from "react-router-dom";
 import React from "react";
 
 interface MenuDisplayProps {
@@ -14,6 +14,12 @@ interface MenuDisplayProps {
 }
 
 export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDisplayProps) => {
+  const navigate = useNavigate();
+
+  const handleShoppingListClick = () => {
+    navigate("/lista-compras", { state: { menu } });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
@@ -24,25 +30,21 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
             className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2"
           >
             {({ loading }) => (
-              <>
+              <React.Fragment>
                 <Download className="w-4 h-4" />
                 {loading ? "Gerando PDF..." : "Baixar Cardápio"}
-              </>
+              </React.Fragment>
             )}
           </PDFDownloadLink>
 
-          <PDFDownloadLink
-            document={<ShoppingListPDF menu={menu} />}
-            fileName="lista-compras.pdf"
-            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 gap-2"
+          <Button
+            variant="outline"
+            onClick={handleShoppingListClick}
+            className="flex items-center gap-2"
           >
-            {({ loading }) => (
-              <>
-                <ShoppingBag className="w-4 h-4" />
-                {loading ? "Gerando PDF..." : "Lista de Compras"}
-              </>
-            )}
-          </PDFDownloadLink>
+            <ShoppingBag className="w-4 h-4" />
+            Lista de Compras
+          </Button>
         </div>
       </div>
 
@@ -95,4 +97,4 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
       </Card>
     </div>
   );
-}
+};

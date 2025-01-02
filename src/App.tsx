@@ -6,8 +6,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import React from "react";
 
-// Lazy load da página principal
+// Lazy load das páginas
 const Index = lazy(() => import("./pages/Index"));
+const ShoppingList = lazy(() => import("./pages/ShoppingList"));
 
 // Create a client
 const queryClient = new QueryClient({
@@ -15,7 +16,6 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 5 * 60 * 1000,
       retry: 1,
-      // Usando gcTime ao invés de cacheTime (nova API do TanStack Query)
       gcTime: 10 * 60 * 1000,
     },
   },
@@ -39,6 +39,7 @@ function App() {
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/lista-compras" element={<ShoppingList />} />
               </Routes>
             </Suspense>
           </BrowserRouter>
