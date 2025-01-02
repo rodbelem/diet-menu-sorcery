@@ -23,11 +23,9 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
             fileName="cardapio.pdf"
           >
             {({ loading }) => (
-              <Button disabled={loading} className="gap-2" asChild>
-                <div>
-                  <Download className="w-4 h-4" />
-                  {loading ? "Gerando PDF..." : "Baixar Cardápio"}
-                </div>
+              <Button disabled={loading} className="gap-2">
+                <Download className="w-4 h-4" />
+                {loading ? "Gerando PDF..." : "Baixar Cardápio"}
               </Button>
             )}
           </PDFDownloadLink>
@@ -37,11 +35,9 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
             fileName="lista-compras.pdf"
           >
             {({ loading }) => (
-              <Button disabled={loading} variant="outline" className="gap-2" asChild>
-                <div>
-                  <ShoppingBag className="w-4 h-4" />
-                  {loading ? "Gerando PDF..." : "Lista de Compras"}
-                </div>
+              <Button disabled={loading} variant="outline" className="gap-2">
+                <ShoppingBag className="w-4 h-4" />
+                {loading ? "Gerando PDF..." : "Lista de Compras"}
               </Button>
             )}
           </PDFDownloadLink>
@@ -55,13 +51,13 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
         <CardContent>
           {menu.days.map((day, dayIndex) => (
             <div key={dayIndex} className="mb-4">
-              <h2 className="text-xl font-bold">{day.dayName}</h2>
+              <h2 className="text-xl font-bold">{day.day}</h2>
               <div className="space-y-2">
                 {day.meals.map((meal, mealIndex) => (
                   <div key={mealIndex} className="flex justify-between items-center">
-                    <span>{meal.mealName}</span>
+                    <span>{meal.meal}</span>
                     <Button
-                      onClick={() => onRegenerateMeal(dayIndex, mealIndex, meal.mealType)}
+                      onClick={() => onRegenerateMeal(dayIndex, mealIndex, meal.meal)}
                       disabled={regeneratingMeal === `${dayIndex}-${mealIndex}`}
                       variant="outline"
                     >
