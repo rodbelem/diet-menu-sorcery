@@ -1,8 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Download, ShoppingBag } from "lucide-react";
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import { MenuPDF } from "@/components/MenuPDF";
+import { RefreshCw, ShoppingBag } from "lucide-react";
 import { Menu } from "@/types/menu";
 import { useNavigate } from "react-router-dom";
 import React from "react";
@@ -24,19 +22,6 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
         <div className="flex gap-4">
-          <PDFDownloadLink
-            document={<MenuPDF menu={menu} />}
-            fileName="cardapio.pdf"
-            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 gap-2"
-          >
-            {({ loading }) => (
-              <React.Fragment>
-                <Download className="w-4 h-4" />
-                {loading ? "Gerando PDF..." : "Baixar Cardápio"}
-              </React.Fragment>
-            )}
-          </PDFDownloadLink>
-
           <Button
             variant="outline"
             onClick={handleShoppingListClick}
