@@ -19,27 +19,17 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    // Habilita minificação mais agressiva
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
-      }
-    },
-    // Divide o código em chunks menores
     rollupOptions: {
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
           'ui-vendor': ['@radix-ui/react-toast', '@radix-ui/react-tooltip'],
-          'pdf-vendor': ['@react-pdf/renderer']
+          'pdf-vendor': ['@react-pdf/renderer', 'pdfjs-dist']
         }
-      }
-    },
-    // Habilita compressão Brotli
-    brotliSize: true,
-    // Reduz o tamanho do chunk
-    chunkSizeWarningLimit: 1000
+      },
+      external: [
+        'pdfjs-dist/build/pdf.worker.entry'
+      ]
+    }
   }
 }));
