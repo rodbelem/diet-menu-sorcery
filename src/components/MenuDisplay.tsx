@@ -16,7 +16,7 @@ interface MenuDisplayProps {
 export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDisplayProps) => {
   const navigate = useNavigate();
 
-  if (!menu || !menu.days) {
+  if (!menu?.days?.length) {
     return null;
   }
 
@@ -47,7 +47,7 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
                 className="flex items-center gap-2"
               >
                 <FileDown className="w-4 h-4" />
-                Baixar Cardápio PDF
+                {loading ? "Gerando PDF..." : "Baixar Cardápio PDF"}
               </Button>
             )}
           </PDFDownloadLink>
