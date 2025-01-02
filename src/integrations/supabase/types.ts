@@ -9,7 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      ingredients: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_update: string | null
+          measurement_unit: string
+          name: string
+          price_per_kg: number | null
+          price_per_unit: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_update?: string | null
+          measurement_unit: string
+          name: string
+          price_per_kg?: number | null
+          price_per_unit?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_update?: string | null
+          measurement_unit?: string
+          name?: string
+          price_per_kg?: number | null
+          price_per_unit?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

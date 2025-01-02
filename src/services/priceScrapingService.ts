@@ -117,7 +117,7 @@ export class PriceScrapingService {
             price_per_unit: product.unit !== 'kg' ? product.price : null,
             measurement_unit: product.unit,
             last_update: new Date().toISOString()
-          })),
+          })) as any,
           { onConflict: 'name' }
         );
 
