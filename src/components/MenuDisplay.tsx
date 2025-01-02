@@ -1,8 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, ShoppingBag } from "lucide-react";
+import { RefreshCw, ShoppingBag, FileDown } from "lucide-react";
 import { Menu } from "@/types/menu";
 import { useNavigate } from "react-router-dom";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import { MenuPDF } from "./MenuPDF";
 import React from "react";
 
 interface MenuDisplayProps {
@@ -30,6 +32,21 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
             <ShoppingBag className="w-4 h-4" />
             Lista de Compras
           </Button>
+          <PDFDownloadLink
+            document={<MenuPDF menu={menu} />}
+            fileName="cardapio.pdf"
+          >
+            {({ loading }) => (
+              <Button
+                variant="outline"
+                disabled={loading}
+                className="flex items-center gap-2"
+              >
+                <FileDown className="w-4 h-4" />
+                Baixar Cardápio PDF
+              </Button>
+            )}
+          </PDFDownloadLink>
         </div>
       </div>
 
