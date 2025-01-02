@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import OpenAI from "https://esm.sh/openai@4.28.0";
 
 const corsHeaders = {
@@ -19,25 +18,42 @@ serve(async (req) => {
 
     const { pdfBase64 } = await req.json();
 
-    // Enviar o conteúdo do PDF para a OpenAI
+    // First, let's get a concise summary of the PDF content
+    const summaryResponse = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are a specialized nutritionist assistant. Your task is to extract and summarize the key information from nutrition plans, focusing only on the essential details about meals, portions, and restrictions."
+        },
+        {
+          role: "user",
+          content: `Extract and summarize the key nutritional information from this PDF content, focusing only on meals, portions, and restrictions: ${pdfBase64.substring(0, 60000)}`
+        }
+      ],
+    });
+
+    const summary = summaryResponse.choices[0].message.content;
+
+    // Now, let's process the summary to extract structured information
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: "Você é um assistente especializado em extrair e formatar informações de planos alimentares em PDF. Extraia todas as informações relevantes sobre refeições, porções, horários e restrições."
+          content: "You are a nutritionist assistant that helps format nutrition plans into structured data. Format the information into clear, specific meal plans with exact portions and ingredients."
         },
         {
           role: "user",
-          content: `Este é um plano alimentar em formato base64. Por favor, extraia e formate as informações relevantes: ${pdfBase64}`
+          content: `Based on this nutrition plan summary, create a structured meal plan: ${summary}`
         }
       ],
     });
 
-    const extractedContent = response.choices[0].message.content;
-
+    console.log('OpenAI processing completed successfully');
+    
     return new Response(
-      JSON.stringify({ content: extractedContent }),
+      JSON.stringify({ content: response.choices[0].message.content }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       },
