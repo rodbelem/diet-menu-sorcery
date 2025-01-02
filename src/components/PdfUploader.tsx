@@ -5,7 +5,10 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { useToast } from "@/hooks/use-toast";
 
 // Configure worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'node_modules/pdfjs-dist/build/pdf.worker.mjs',
+  import.meta.url
+).toString();
 
 interface PdfUploaderProps {
   onContentExtracted: (content: string) => void;
