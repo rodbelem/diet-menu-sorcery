@@ -22,16 +22,65 @@ const ShoppingList = () => {
     );
   }
 
-  // Agrupa ingredientes únicos de todas as refeições
-  const uniqueIngredients = Array.from(
-    new Set(
-      menu.days.flatMap(day =>
-        day.meals.flatMap(meal =>
-          meal.ingredients.map(ingredient => ingredient.name)
-        )
-      )
+  // Agrupa ingredientes e soma suas quantidades
+  const groupedIngredients = menu.days.flatMap(day =>
+    day.meals.flatMap(meal =>
+      meal.ingredients.map(ingredient => ({
+        name: ingredient.name,
+        quantity: ingredient.quantity,
+      }))
     )
-  ).sort();
+  ).reduce((acc, curr) => {
+    const existingIngredient = acc.find(item => item.name === curr.name);
+    if (existingIngredient) {
+      // Se a quantidade já inclui uma unidade de medida, apenas agrupe sem somar
+      if (isNaN(parseFloat(curr.quantity))) {
+        existingIngredient.quantities.add(curr.quantity);
+      } else {
+        // Se for um número, tente somar
+        const currentNum = parseFloat(curr.quantity);
+        const unit = curr.quantity.replace(/[\d.]/g, '').trim();
+        existingIngredient.total += currentNum;
+        existingIngredient.unit = unit;
+      }
+    } else {
+      const quantity = curr.quantity;
+      const numericValue = parseFloat(quantity);
+      if (isNaN(numericValue)) {
+        // Se não for um número, apenas armazene como string
+        acc.push({
+          name: curr.name,
+          quantities: new Set([quantity]),
+          total: 0,
+          unit: ''
+        });
+      } else {
+        // Se for um número, extraia a unidade e o valor
+        const unit = quantity.replace(/[\d.]/g, '').trim();
+        acc.push({
+          name: curr.name,
+          quantities: new Set(),
+          total: numericValue,
+          unit: unit
+        });
+      }
+    }
+    return acc;
+  }, [] as Array<{
+    name: string;
+    quantities: Set<string>;
+    total: number;
+    unit: string;
+  }>);
+
+  const sortedIngredients = groupedIngredients
+    .map(ingredient => ({
+      name: ingredient.name,
+      displayQuantity: ingredient.total > 0
+        ? `${ingredient.total}${ingredient.unit}`
+        : Array.from(ingredient.quantities).join(', ')
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const handleCheckItem = (ingredient: string) => {
     setCheckedItems(prev => ({
@@ -49,23 +98,24 @@ const ShoppingList = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {uniqueIngredients.map((ingredient) => (
+              {sortedIngredients.map(({ name, displayQuantity }) => (
                 <div
-                  key={ingredient}
+                  key={name}
                   className="flex items-center space-x-3 p-3 rounded-lg bg-white shadow-sm"
                 >
                   <Checkbox
-                    id={ingredient}
-                    checked={checkedItems[ingredient] || false}
-                    onCheckedChange={() => handleCheckItem(ingredient)}
+                    id={name}
+                    checked={checkedItems[name] || false}
+                    onCheckedChange={() => handleCheckItem(name)}
                   />
                   <Label
-                    htmlFor={ingredient}
+                    htmlFor={name}
                     className={`flex-grow cursor-pointer ${
-                      checkedItems[ingredient] ? "line-through text-gray-400" : ""
+                      checkedItems[name] ? "line-through text-gray-400" : ""
                     }`}
                   >
-                    {ingredient}
+                    <span className="font-medium">{name}</span>
+                    <span className="ml-2 text-gray-600">({displayQuantity})</span>
                   </Label>
                 </div>
               ))}
