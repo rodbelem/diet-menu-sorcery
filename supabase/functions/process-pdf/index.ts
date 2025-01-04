@@ -43,7 +43,7 @@ serve(async (req) => {
           role: "user",
           content: [
             {
-              type: "image",
+              type: "image_url",
               image_url: {
                 url: `data:application/pdf;base64,${pdfBase64}`
               }
@@ -112,18 +112,14 @@ serve(async (req) => {
 
     console.log('Cardápio gerado com sucesso');
     
-    return new Response(
-      JSON.stringify({ content: menuResponse.choices[0].message.content }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    );
+    return new Response(JSON.stringify({ content: menuResponse.choices[0].message.content }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('Erro ao processar PDF:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      },
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
