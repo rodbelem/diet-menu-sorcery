@@ -1,26 +1,10 @@
-import OpenAI from 'openai';
 import { Menu, MenuItem } from '@/types/menu';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
-
-const getOpenAIClient = async () => {
-  const { data, error } = await supabase.functions.invoke('get-secret', {
-    body: { name: 'OPENAI_API_KEY' }
-  });
-  
-  if (error || !data?.secret) {
-    throw new Error('Failed to get OpenAI API key');
-  }
-  
-  return new OpenAI({
-    apiKey: data.secret,
-    dangerouslyAllowBrowser: true
-  });
-};
+import { generateWithAnthropic } from './ai/anthropic';
+import { generateWithOpenAI } from './ai/openai';
 
 export const generateMenu = async (pdfContent: string, period: "weekly" | "biweekly") => {
-  const openai = await getOpenAIClient();
-  
   // First, store the pattern from PDF
   const { data: patternData, error: patternError } = await supabase
     .from('meal_patterns')
@@ -85,13 +69,7 @@ Retorne os dados em formato JSON seguindo exatamente esta estrutura:
 }`;
 
   try {
-    const completion = await openai.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
-      model: "gpt-4o",
-      response_format: { type: "json_object" }
-    });
-
-    const response = completion.choices[0].message.content;
+    const response = await generateWithAnthropic(prompt);
     if (!response) throw new Error("Não foi possível gerar o cardápio");
     
     const menuData = JSON.parse(response) as Menu;
