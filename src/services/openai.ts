@@ -20,6 +20,18 @@ const getOpenAIClient = async () => {
 export const generateMenu = async (pdfContent: string, period: "weekly" | "biweekly") => {
   const openai = await getOpenAIClient();
   
+  // First, store the pattern from PDF
+  const { data: patternData, error: patternError } = await supabase
+    .from('meal_patterns')
+    .insert([{ content: pdfContent }])
+    .select()
+    .single();
+
+  if (patternError) {
+    console.error('Error storing meal pattern:', patternError);
+    throw patternError;
+  }
+
   const periodConfig = {
     weekly: {
       days: "7",
@@ -82,7 +94,26 @@ Retorne os dados no seguinte formato JSON:
     const response = completion.choices[0].message.content;
     if (!response) throw new Error("Não foi possível gerar o cardápio");
     
-    return JSON.parse(response) as Menu;
+    const menuData = JSON.parse(response) as Menu;
+
+    // Store the generated menu
+    const { data: menuRecord, error: menuError } = await supabase
+      .from('menus')
+      .insert([{
+        pattern_id: patternData.id,
+        content: menuData,
+        period: period,
+        total_cost: menuData.totalCost
+      }])
+      .select()
+      .single();
+
+    if (menuError) {
+      console.error('Error storing menu:', menuError);
+      throw menuError;
+    }
+    
+    return menuData;
   } catch (error) {
     console.error("Erro ao gerar cardápio:", error);
     throw error;
@@ -108,7 +139,37 @@ CARDAPIO: ${JSON.stringify(menu, null, 2)}`;
     const response = completion.choices[0].message.content;
     if (!response) throw new Error("Não foi possível gerar a lista de compras");
     
-    return JSON.parse(response);
+    const shoppingListData = JSON.parse(response);
+
+    // Get the menu ID from the database
+    const { data: menuData, error: menuError } = await supabase
+      .from('menus')
+      .select('id')
+      .eq('content', menu)
+      .single();
+
+    if (menuError) {
+      console.error('Error finding menu:', menuError);
+      throw menuError;
+    }
+
+    // Store the shopping list
+    const { data: shoppingListRecord, error: shoppingListError } = await supabase
+      .from('shopping_lists')
+      .insert([{
+        menu_id: menuData.id,
+        content: shoppingListData,
+        total_cost: menu.totalCost
+      }])
+      .select()
+      .single();
+
+    if (shoppingListError) {
+      console.error('Error storing shopping list:', shoppingListError);
+      throw shoppingListError;
+    }
+
+    return shoppingListData;
   } catch (error) {
     console.error("Erro ao gerar lista de compras:", error);
     throw error;

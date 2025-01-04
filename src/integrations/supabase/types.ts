@@ -39,6 +39,100 @@ export type Database = {
         }
         Relationships: []
       }
+      meal_patterns: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      menus: {
+        Row: {
+          content: Json
+          created_at: string | null
+          id: string
+          pattern_id: string | null
+          period: string
+          total_cost: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          content: Json
+          created_at?: string | null
+          id?: string
+          pattern_id?: string | null
+          period: string
+          total_cost?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: Json
+          created_at?: string | null
+          id?: string
+          pattern_id?: string | null
+          period?: string
+          total_cost?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menus_pattern_id_fkey"
+            columns: ["pattern_id"]
+            isOneToOne: false
+            referencedRelation: "meal_patterns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_lists: {
+        Row: {
+          content: Json
+          created_at: string | null
+          id: string
+          menu_id: string | null
+          total_cost: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          content: Json
+          created_at?: string | null
+          id?: string
+          menu_id?: string | null
+          total_cost?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: Json
+          created_at?: string | null
+          id?: string
+          menu_id?: string | null
+          total_cost?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_lists_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "menus"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

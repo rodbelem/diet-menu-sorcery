@@ -15,13 +15,12 @@ serve(async (req) => {
 
   try {
     const { pdfBase64 } = await req.json();
-    console.log('[1/4] Iniciando processamento do PDF...');
+    console.log('[1/3] Iniciando processamento do PDF...');
     
     const pdfText = atob(pdfBase64);
-    console.log('[2/4] PDF decodificado, tamanho:', pdfText.length, 'caracteres');
-    console.log('Primeiros 200 caracteres do PDF:', pdfText.substring(0, 200) + '...');
+    console.log('[2/3] PDF decodificado, processando texto completo...');
     
-    console.log('[3/4] Enviando requisição para OpenAI...');
+    console.log('[3/3] Enviando requisição para OpenAI...');
     const openAIBody = {
       model: "gpt-4o",
       messages: [
@@ -36,8 +35,6 @@ serve(async (req) => {
       ],
       response_format: { type: "json_object" }
     };
-    
-    console.log('Enviando texto completo do PDF para OpenAI, tamanho:', pdfText.length);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -49,7 +46,7 @@ serve(async (req) => {
     });
 
     const data = await response.json();
-    console.log('[4/4] Resposta recebida da OpenAI');
+    console.log('Resposta recebida da OpenAI');
     
     if (!response.ok) {
       console.error('Erro da OpenAI:', data);
