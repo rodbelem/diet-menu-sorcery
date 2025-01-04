@@ -26,19 +26,14 @@ serve(async (req) => {
       messages: [
         {
           role: "system",
-          content: "You are a nutrition expert. Analyze the PDF content and extract ONLY:\n1. Meal times\n2. Allowed foods and their exact quantities\n3. Any dietary restrictions\nBe extremely concise and precise with measurements."
+          content: "You are a nutrition expert. Extract ONLY the essential information from this PDF content:\n1. Meal times\n2. Allowed foods and their exact quantities\n3. Any dietary restrictions\nBe extremely concise, using bullet points only."
         },
         {
           role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Here is the PDF content in base64: ${pdfBase64}`
-            }
-          ]
+          content: `Extract nutritional information from this PDF content: ${pdfBase64.substring(0, 100000)}`
         }
       ],
-      max_tokens: 2000
+      max_tokens: 1000
     });
 
     const extractedContent = extractionResponse.choices[0].message.content;

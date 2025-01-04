@@ -44,10 +44,9 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
               <Button
                 variant="outline"
                 disabled={loading}
-                className="flex items-center gap-2"
                 type="button"
               >
-                <FileDown className="w-4 h-4" />
+                <FileDown className="w-4 h-4 mr-2" />
                 {loading ? "Gerando PDF..." : "Baixar Cardápio PDF"}
               </Button>
             )}
