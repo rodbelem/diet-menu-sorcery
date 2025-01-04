@@ -19,12 +19,9 @@ serve(async (req) => {
     
     const pdfText = atob(pdfBase64);
     console.log('[2/4] PDF decodificado, tamanho:', pdfText.length, 'caracteres');
-    console.log('Conteúdo do PDF:', pdfText.substring(0, 200) + '...');
+    console.log('Primeiros 200 caracteres do PDF:', pdfText.substring(0, 200) + '...');
     
-    const truncatedText = pdfText.slice(0, 2000);
-    console.log('[3/4] Texto truncado para os primeiros 2000 caracteres');
-    
-    console.log('[4/4] Enviando requisição para OpenAI...');
+    console.log('[3/4] Enviando requisição para OpenAI...');
     const openAIBody = {
       model: "gpt-4o",
       messages: [
@@ -34,13 +31,13 @@ serve(async (req) => {
         },
         {
           role: "user",
-          content: truncatedText
+          content: pdfText
         }
       ],
       response_format: { type: "json_object" }
     };
     
-    console.log('Corpo da requisição para OpenAI:', JSON.stringify(openAIBody, null, 2));
+    console.log('Enviando texto completo do PDF para OpenAI, tamanho:', pdfText.length);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -52,9 +49,10 @@ serve(async (req) => {
     });
 
     const data = await response.json();
-    console.log('Resposta da OpenAI:', JSON.stringify(data, null, 2));
-
+    console.log('[4/4] Resposta recebida da OpenAI');
+    
     if (!response.ok) {
+      console.error('Erro da OpenAI:', data);
       throw new Error(data.error?.message || 'Erro ao processar o PDF');
     }
 
