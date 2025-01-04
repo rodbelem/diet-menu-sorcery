@@ -12,15 +12,23 @@ serve(async (req) => {
   }
 
   try {
-    const { name } = await req.json()
-    const secret = Deno.env.get(name)
+    const { keys } = await req.json()
+    
+    if (!Array.isArray(keys) || keys.length === 0) {
+      throw new Error('Keys must be a non-empty array')
+    }
 
-    if (!secret) {
-      throw new Error(`Secret ${name} not found`)
+    const secrets = {}
+    for (const key of keys) {
+      const value = Deno.env.get(key)
+      if (!value) {
+        console.error(`Secret ${key} not found`)
+      }
+      secrets[key] = value || null
     }
 
     return new Response(
-      JSON.stringify({ secret }),
+      JSON.stringify({ data: secrets }),
       { 
         headers: { 
           ...corsHeaders,
@@ -29,6 +37,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
+    console.error('Error getting secrets:', error.message)
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
