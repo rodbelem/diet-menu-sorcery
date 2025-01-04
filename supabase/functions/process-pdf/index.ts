@@ -18,7 +18,7 @@ async function processWithOpenAI(text: string) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4-turbo-preview',
+      model: 'gpt-4-1106-preview',
       messages: [
         { 
           role: 'system', 
@@ -26,6 +26,7 @@ async function processWithOpenAI(text: string) {
         },
         { role: 'user', content: text }
       ],
+      temperature: 0.7,
       response_format: { type: "json_object" }
     }),
   });
@@ -33,7 +34,7 @@ async function processWithOpenAI(text: string) {
   if (!response.ok) {
     const errorData = await response.json();
     console.error('OpenAI API error details:', errorData);
-    throw new Error(`OpenAI API error: ${response.statusText || 'Unknown error'}`);
+    throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText || 'Unknown error'}`);
   }
 
   const data = await response.json();
@@ -82,7 +83,6 @@ async function processWithClaude(text: string) {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
