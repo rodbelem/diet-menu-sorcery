@@ -15,14 +15,21 @@ serve(async (req) => {
 
   try {
     const { pdfBase64 } = await req.json();
-    console.log('[1/3] Iniciando processamento do PDF...');
+    console.log('[1/4] Iniciando processamento do PDF...');
     
     const pdfText = atob(pdfBase64);
-    console.log('[2/3] PDF decodificado, processando texto completo...');
+    console.log('[2/4] PDF decodificado, tamanho:', pdfText.length, 'caracteres');
     
-    console.log('[3/3] Enviando requisição para OpenAI...');
+    // Estimar o número de tokens (aproximadamente 4 caracteres por token)
+    const estimatedTokens = Math.ceil(pdfText.length / 4);
+    console.log(`[3/4] Tokens estimados: ${estimatedTokens}`);
+
+    // Escolher o modelo baseado no tamanho do texto
+    const model = estimatedTokens > 128000 ? "gpt-4o-mini" : "gpt-4o";
+    console.log(`Usando modelo ${model} para processar o texto`);
+
     const openAIBody = {
-      model: "gpt-4o",
+      model: model,
       messages: [
         {
           role: "system",
@@ -36,6 +43,7 @@ serve(async (req) => {
       response_format: { type: "json_object" }
     };
 
+    console.log(`[4/4] Enviando requisição para OpenAI usando modelo ${model}...`);
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {

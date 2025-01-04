@@ -101,7 +101,7 @@ Retorne os dados no seguinte formato JSON:
       .from('menus')
       .insert([{
         pattern_id: patternData.id,
-        content: menuData,
+        content: menuData as unknown as Json,
         period: period,
         total_cost: menuData.totalCost
       }])
@@ -158,7 +158,7 @@ CARDAPIO: ${JSON.stringify(menu, null, 2)}`;
       .from('shopping_lists')
       .insert([{
         menu_id: menuData.id,
-        content: shoppingListData,
+        content: shoppingListData as unknown as Json,
         total_cost: menu.totalCost
       }])
       .select()
