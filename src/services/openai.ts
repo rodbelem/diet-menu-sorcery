@@ -1,8 +1,7 @@
 import { Menu, MenuItem } from '@/types/menu';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
-import { generateWithAnthropic } from './ai/anthropic';
-import { generateWithOpenAI } from './ai/openai';
+import { generateAIResponse } from './ai';
 
 export const generateMenu = async (pdfContent: string, period: "weekly" | "biweekly") => {
   // First, store the pattern from PDF
@@ -69,7 +68,7 @@ Retorne os dados em formato JSON seguindo exatamente esta estrutura:
 }`;
 
   try {
-    const response = await generateWithAnthropic(prompt);
+    const response = await generateAIResponse(prompt);
     if (!response) throw new Error("Não foi possível gerar o cardápio");
     
     const menuData = JSON.parse(response) as Menu;
@@ -98,87 +97,7 @@ Retorne os dados em formato JSON seguindo exatamente esta estrutura:
   }
 };
 
-export const generateShoppingList = async (menu: Menu) => {
-  const openai = await getOpenAIClient();
-  
-  const prompt = `Você é um nutricionista especializado em criar listas de compras precisas a partir de cardápios.
-
-Analise cuidadosamente o cardápio abaixo e crie uma lista de compras completa que inclua:
-1) Todos os ingredientes necessários
-2) As quantidades totais de cada item
-3) Medidas práticas para compras em supermercado
-
-CARDÁPIO:
-${JSON.stringify(menu, null, 2)}
-
-Retorne a lista em formato JSON seguindo exatamente esta estrutura:
-{
-  "categories": [
-    {
-      "name": "Nome da categoria (ex: Frutas, Verduras, Proteínas)",
-      "items": [
-        {
-          "name": "Nome do item",
-          "quantity": "Quantidade total necessária",
-          "unit": "Unidade de medida para compra",
-          "estimatedCost": 0.00
-        }
-      ]
-    }
-  ],
-  "totalCost": 0.00
-}`;
-
-  try {
-    const completion = await openai.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
-      model: "gpt-4o",
-      response_format: { type: "json_object" }
-    });
-
-    const response = completion.choices[0].message.content;
-    if (!response) throw new Error("Não foi possível gerar a lista de compras");
-    
-    const shoppingListData = JSON.parse(response);
-
-    // Get the menu ID from the database
-    const { data: menuData, error: menuError } = await supabase
-      .from('menus')
-      .select('id')
-      .eq('content', menu)
-      .single();
-
-    if (menuError) {
-      console.error('Error finding menu:', menuError);
-      throw menuError;
-    }
-
-    // Store the shopping list
-    const { data: shoppingListRecord, error: shoppingListError } = await supabase
-      .from('shopping_lists')
-      .insert([{
-        menu_id: menuData.id,
-        content: shoppingListData as unknown as Json,
-        total_cost: menu.totalCost
-      }])
-      .select()
-      .single();
-
-    if (shoppingListError) {
-      console.error('Error storing shopping list:', shoppingListError);
-      throw shoppingListError;
-    }
-
-    return shoppingListData;
-  } catch (error) {
-    console.error("Erro ao gerar lista de compras:", error);
-    throw error;
-  }
-};
-
 export const regenerateMeal = async (pdfContent: string, mealType: string) => {
-  const openai = await getOpenAIClient();
-  
   const prompt = `Analise cuidadosamente o seguinte planejamento alimentar e gere uma nova opção para a refeição "${mealType}" que:
 1) Use APENAS alimentos explicitamente permitidos no planejamento
 2) Mantenha EXATAMENTE as mesmas quantidades especificadas
@@ -202,13 +121,7 @@ Retorne os dados em formato JSON seguindo exatamente esta estrutura:
 }`;
 
   try {
-    const completion = await openai.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
-      model: "gpt-4o",
-      response_format: { type: "json_object" }
-    });
-
-    const response = completion.choices[0].message.content;
+    const response = await generateAIResponse(prompt);
     if (!response) throw new Error("Não foi possível gerar nova opção de refeição");
     
     return JSON.parse(response) as MenuItem;
