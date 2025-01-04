@@ -33,7 +33,7 @@ serve(async (req) => {
       messages: [
         {
           role: "system",
-          content: "Você é um nutricionista especializado em analisar planos alimentares. Extraia o padrão de cada refeição e retorne em formato JSON. A resposta deve ser um objeto JSON válido."
+          content: "Você é um nutricionista especializado em analisar planos alimentares. Sua tarefa é extrair o padrão de cada refeição do plano nutricional fornecido, prestando atenção aos alimentos permitidos, suas quantidades e horários específicos. Retorne apenas o padrão extraído, sem sugestões ou variações."
         },
         {
           role: "user",
