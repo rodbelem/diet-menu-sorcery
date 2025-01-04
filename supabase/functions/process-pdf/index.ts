@@ -36,9 +36,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `Você é um nutricionista especializado em analisar planos alimentares.
-            
-            Analise o conteúdo do PDF e extraia APENAS o padrão de cada refeição, com a quantidade exata indicada no planejamento`
+            content: "Você é um nutricionista especializado em analisar planos alimentares. Extraia o padrão de cada refeição e retorne em formato JSON."
           },
           {
             role: "user",
