@@ -18,17 +18,17 @@ serve(async (req) => {
       apiKey: Deno.env.get('OPENAI_API_KEY')
     });
 
-    console.log('Iniciando extração do padrão alimentar do PDF...');
+    console.log('Iniciando análise do PDF com Vision API...');
 
-    // Primeiro, extrair o padrão alimentar do PDF
-    const extractionResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+    // Etapa 1: Preparar o conteúdo para a Vision API
+    const visionResponse = await openai.chat.completions.create({
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
           content: `Você é um nutricionista especializado em analisar planos alimentares.
           
-          Analise o conteúdo do PDF e extraia APENAS:
+          Analise a imagem do plano alimentar e extraia APENAS:
           1. Horários específicos de cada refeição
           2. Padrão de cada refeição (café da manhã, desjejum, pré-treino, almoço, lanche, jantar, ceia)
           3. Quantidades exatas de cada alimento permitido em cada refeição
@@ -41,16 +41,23 @@ serve(async (req) => {
         },
         {
           role: "user",
-          content: `Extraia o padrão alimentar deste conteúdo: ${pdfBase64.substring(0, 100000)}`
+          content: [
+            {
+              type: "image",
+              image_url: {
+                url: `data:application/pdf;base64,${pdfBase64}`
+              }
+            }
+          ]
         }
       ],
-      max_tokens: 1000
+      max_tokens: 1500
     });
 
-    const padraoAlimentar = extractionResponse.choices[0].message.content;
-    console.log('Padrão alimentar extraído, gerando cardápio...');
+    const padraoAlimentar = visionResponse.choices[0].message.content;
+    console.log('Padrão alimentar extraído com sucesso:', padraoAlimentar);
 
-    // Agora, gerar o cardápio baseado no padrão extraído
+    // Etapa 2: Gerar o cardápio baseado no padrão extraído
     const menuResponse = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
