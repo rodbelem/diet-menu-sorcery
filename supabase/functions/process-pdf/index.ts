@@ -18,7 +18,7 @@ async function processWithOpenAI(text: string) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4o-mini',
+      model: 'gpt-4',
       messages: [
         { 
           role: 'system', 
@@ -29,10 +29,14 @@ async function processWithOpenAI(text: string) {
     }),
   });
 
+  if (!response.ok) {
+    throw new Error(`OpenAI API error: ${response.statusText}`);
+  }
+
   const data = await response.json();
   
-  if (data.error?.message?.includes('maximum context length')) {
-    throw new Error('TOKEN_LIMIT_EXCEEDED');
+  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+    throw new Error('Invalid response format from OpenAI');
   }
   
   return data.choices[0].message.content;
@@ -55,17 +59,32 @@ async function processWithClaude(text: string) {
     })
   });
 
+  if (!response.ok) {
+    throw new Error(`Claude API error: ${response.statusText}`);
+  }
+
   const data = await response.json();
+  
+  if (!data.content || !data.content[0] || !data.content[0].text) {
+    throw new Error('Invalid response format from Claude');
+  }
+  
   return data.content[0].text;
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { pdfBase64 } = await req.json();
+    
+    if (!pdfBase64) {
+      throw new Error('PDF content is required');
+    }
+    
     console.log('Iniciando processamento do PDF...');
     
     const pdfText = atob(pdfBase64);
@@ -75,7 +94,8 @@ serve(async (req) => {
     try {
       content = await processWithOpenAI(pdfText);
     } catch (error) {
-      if (error.message === 'TOKEN_LIMIT_EXCEEDED') {
+      console.error('Erro ao processar com OpenAI:', error);
+      if (error.message.includes('maximum context length')) {
         content = await processWithClaude(pdfText);
       } else {
         throw error;
@@ -84,7 +104,12 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ content }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
     );
   } catch (error) {
     console.error('Erro ao processar PDF:', error);
@@ -92,7 +117,10 @@ serve(async (req) => {
       JSON.stringify({ error: error.message }), 
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        },
       }
     );
   }
