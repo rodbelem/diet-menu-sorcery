@@ -9,22 +9,24 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { pdfBase64 } = await req.json();
-    console.log('Iniciando processamento do PDF...');
+    console.log('[1/4] Iniciando processamento do PDF...');
     
     // Decode base64 to text
     const pdfText = atob(pdfBase64);
+    console.log('[2/4] PDF decodificado, tamanho:', pdfText.length, 'caracteres');
     
     // Extract only the relevant sections (first 2000 characters should be enough for the meal plan)
     const truncatedText = pdfText.slice(0, 2000);
-    
-    console.log('Enviando conteúdo truncado para OpenAI...');
+    console.log('[3/4] Texto truncado para os primeiros 2000 caracteres para evitar limite de tokens');
 
+    console.log('[4/4] Enviando requisição para OpenAI...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -36,14 +38,13 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "Você é um nutricionista especializado em analisar planos alimentares. Extraia o padrão de cada refeição e retorne em formato JSON."
+            content: "Você é um nutricionista especializado em analisar planos alimentares. Extraia o padrão de cada refeição e retorne em formato JSON. A resposta deve ser um objeto JSON válido."
           },
           {
             role: "user",
             content: truncatedText
           }
         ],
-        temperature: 0,
         response_format: { type: "json_object" }
       }),
     });
