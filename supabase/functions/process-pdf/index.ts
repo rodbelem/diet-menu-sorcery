@@ -26,11 +26,22 @@ serve(async (req) => {
       messages: [
         {
           role: "system",
-          content: "Extract ONLY the following from the nutritional plan, nothing else:\n1. Meal times\n2. Allowed foods and their exact quantities\n3. Any dietary restrictions\nBe extremely concise."
+          content: "You are a nutrition expert. Analyze the PDF image and extract ONLY:\n1. Meal times\n2. Allowed foods and their exact quantities\n3. Any dietary restrictions\nBe extremely concise and precise with measurements."
         },
         {
           role: "user",
-          content: pdfBase64
+          content: [
+            {
+              type: "image",
+              image_url: {
+                url: `data:application/pdf;base64,${pdfBase64}`
+              }
+            },
+            {
+              type: "text",
+              text: "Extract the nutritional information from this PDF, focusing only on meal times, allowed foods with exact quantities, and any dietary restrictions. Be concise."
+            }
+          ]
         }
       ],
       max_tokens: 2000
@@ -45,7 +56,7 @@ serve(async (req) => {
       messages: [
         {
           role: "system",
-          content: "Create a menu based on these nutritional guidelines. Be precise with measurements."
+          content: "Create a menu based on these nutritional guidelines. Be precise with measurements and follow all dietary restrictions."
         },
         {
           role: "user",
