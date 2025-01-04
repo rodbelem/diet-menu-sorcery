@@ -16,6 +16,14 @@ serve(async (req) => {
   try {
     const { pdfBase64 } = await req.json();
     console.log('Iniciando processamento do PDF...');
+    
+    // Decode base64 to text
+    const pdfText = atob(pdfBase64);
+    
+    // Extract only the relevant sections (first 2000 characters should be enough for the meal plan)
+    const truncatedText = pdfText.slice(0, 2000);
+    
+    console.log('Enviando conteúdo truncado para OpenAI...');
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -34,16 +42,11 @@ serve(async (req) => {
           },
           {
             role: "user",
-            content: [
-              {
-                type: "text",
-                text: atob(pdfBase64)
-              }
-            ]
+            content: truncatedText
           }
         ],
         temperature: 0,
-        max_tokens: 2000
+        response_format: { type: "json_object" }
       }),
     });
 
