@@ -1,5 +1,5 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { decode } from "https://deno.land/std@0.204.0/encoding/base64.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
@@ -17,12 +17,7 @@ serve(async (req) => {
     const { pdfBase64 } = await req.json();
     console.log('Iniciando processamento do PDF...');
 
-    // Convert base64 to a data URL that OpenAI can process
-    const dataUrl = `data:application/pdf;base64,${pdfBase64}`;
-    
-    console.log('Enviando para Vision API...');
-
-    const visionResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
@@ -35,42 +30,34 @@ serve(async (req) => {
             role: "system",
             content: `Você é um nutricionista especializado em analisar planos alimentares.
             
-            Analise o plano alimentar e extraia APENAS:
-            1. Horários específicos de cada refeição
-            2. Padrão de cada refeição (café da manhã, desjejum, pré-treino, almoço, lanche, jantar, ceia)
-            3. Quantidades exatas de cada alimento permitido em cada refeição
-            4. Restrições alimentares
-            5. Substituições permitidas
-            
-            Seja extremamente preciso com as medidas e quantidades.
-            Use tópicos para organizar as informações.
-            Mantenha APENAS informações relevantes para a criação do cardápio.`
+            Analise o conteúdo do PDF e extraia APENAS o padrão de cada refeição, com a quantidade exata indicada no planejamento`
           },
           {
             role: "user",
             content: [
               {
-                type: "image_url",
-                image_url: {
-                  url: dataUrl
-                }
+                type: "text",
+                text: atob(pdfBase64)
               }
             ]
           }
         ],
-        max_tokens: 1500
+        temperature: 0,
+        max_tokens: 2000
       }),
     });
 
-    const result = await visionResponse.json();
-    console.log('Resposta da Vision API recebida:', result);
-
-    if (result.error) {
-      throw new Error(result.error.message);
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('Erro na resposta da OpenAI:', error);
+      throw new Error(error.error?.message || 'Erro ao processar o PDF');
     }
 
+    const data = await response.json();
+    console.log('Resposta da OpenAI recebida com sucesso');
+
     return new Response(
-      JSON.stringify({ content: result.choices[0].message.content }),
+      JSON.stringify({ content: data.choices[0].message.content }),
       { 
         headers: { 
           ...corsHeaders,
