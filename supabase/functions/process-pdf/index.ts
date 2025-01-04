@@ -28,34 +28,31 @@ serve(async (req) => {
     const model = estimatedTokens > 128000 ? "gpt-4o-mini" : "gpt-4o";
     console.log(`Usando modelo ${model} para processar o texto`);
 
-    const openAIBody = {
-      model: model,
-      messages: [
-        {
-          role: "system",
-          content: "Você é um nutricionista especializado em analisar planos alimentares. Sua tarefa é extrair o padrão de cada refeição do plano nutricional fornecido, prestando atenção aos alimentos permitidos, suas quantidades e horários específicos. Retorne apenas o padrão extraído, sem sugestões ou variações."
-        },
-        {
-          role: "user",
-          content: pdfText
-        }
-      ],
-      response_format: { type: "json_object" }
-    };
-
-    console.log(`[4/4] Enviando requisição para OpenAI usando modelo ${model}...`);
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(openAIBody),
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          {
+            role: "system",
+            content: "Você é um nutricionista especializado em analisar planos alimentares. Sua tarefa é extrair o padrão de cada refeição do plano nutricional fornecido e retornar em formato JSON. Preste atenção aos alimentos permitidos, suas quantidades e horários específicos. Retorne apenas o padrão extraído, sem sugestões ou variações."
+          },
+          {
+            role: "user",
+            content: pdfText
+          }
+        ],
+        response_format: { type: "json_object" }
+      }),
     });
 
     const data = await response.json();
-    console.log('Resposta recebida da OpenAI');
-    
+    console.log('[4/4] Resposta recebida da OpenAI');
+
     if (!response.ok) {
       console.error('Erro da OpenAI:', data);
       throw new Error(data.error?.message || 'Erro ao processar o PDF');

@@ -61,7 +61,7 @@ Padrão alimentar:
 ${pdfContent}
 """
 
-Retorne os dados no seguinte formato JSON:
+Retorne os dados em formato JSON seguindo exatamente esta estrutura:
 {
   "days": [
     {
@@ -133,7 +133,7 @@ Analise cuidadosamente o cardápio abaixo e crie uma lista de compras completa q
 CARDÁPIO:
 ${JSON.stringify(menu, null, 2)}
 
-Retorne a lista no seguinte formato JSON:
+Retorne a lista em formato JSON seguindo exatamente esta estrutura:
 {
   "categories": [
     {
@@ -210,7 +210,7 @@ export const regenerateMeal = async (pdfContent: string, mealType: string) => {
 PLANEJAMENTO:
 ${pdfContent}
 
-Retorne os dados no seguinte formato JSON:
+Retorne os dados em formato JSON seguindo exatamente esta estrutura:
 {
   "meal": "${mealType}",
   "description": "Descrição detalhada da refeição",
