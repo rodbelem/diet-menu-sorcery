@@ -18,7 +18,7 @@ async function processWithOpenAI(text: string) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'gpt-4',
+      model: 'gpt-4-turbo-preview',
       messages: [
         { 
           role: 'system', 
@@ -26,16 +26,21 @@ async function processWithOpenAI(text: string) {
         },
         { role: 'user', content: text }
       ],
+      response_format: { type: "json_object" }
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.statusText}`);
+    const errorData = await response.json();
+    console.error('OpenAI API error details:', errorData);
+    throw new Error(`OpenAI API error: ${response.statusText || 'Unknown error'}`);
   }
 
   const data = await response.json();
+  console.log('OpenAI response received:', data);
   
-  if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+  if (!data.choices?.[0]?.message?.content) {
+    console.error('Invalid OpenAI response format:', data);
     throw new Error('Invalid response format from OpenAI');
   }
   
@@ -60,12 +65,16 @@ async function processWithClaude(text: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`Claude API error: ${response.statusText}`);
+    const errorData = await response.json();
+    console.error('Claude API error details:', errorData);
+    throw new Error(`Claude API error: ${response.statusText || 'Unknown error'}`);
   }
 
   const data = await response.json();
+  console.log('Claude response received:', data);
   
-  if (!data.content || !data.content[0] || !data.content[0].text) {
+  if (!data.content?.[0]?.text) {
+    console.error('Invalid Claude response format:', data);
     throw new Error('Invalid response format from Claude');
   }
   
