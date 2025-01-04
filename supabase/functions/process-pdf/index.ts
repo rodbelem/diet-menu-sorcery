@@ -18,40 +18,88 @@ serve(async (req) => {
       apiKey: Deno.env.get('OPENAI_API_KEY')
     });
 
-    console.log('Iniciando processamento do PDF...');
+    console.log('Iniciando extração do padrão alimentar do PDF...');
 
-    // First, extract only the essential nutritional information with a focused prompt
+    // Primeiro, extrair o padrão alimentar do PDF
     const extractionResponse = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: "You are a nutrition expert. Extract ONLY the essential information from this PDF content:\n1. Meal times\n2. Allowed foods and their exact quantities\n3. Any dietary restrictions\nBe extremely concise, using bullet points only."
+          content: `Você é um nutricionista especializado em analisar planos alimentares.
+          
+          Analise o conteúdo do PDF e extraia APENAS:
+          1. Horários específicos de cada refeição
+          2. Padrão de cada refeição (café da manhã, desjejum, pré-treino, almoço, lanche, jantar, ceia)
+          3. Quantidades exatas de cada alimento permitido em cada refeição
+          4. Restrições alimentares
+          5. Substituições permitidas
+          
+          Seja extremamente preciso com as medidas e quantidades.
+          Use tópicos para organizar as informações.
+          Mantenha APENAS informações relevantes para a criação do cardápio.`
         },
         {
           role: "user",
-          content: `Extract nutritional information from this PDF content: ${pdfBase64.substring(0, 100000)}`
+          content: `Extraia o padrão alimentar deste conteúdo: ${pdfBase64.substring(0, 100000)}`
         }
       ],
       max_tokens: 1000
     });
 
-    const extractedContent = extractionResponse.choices[0].message.content;
-    console.log('Informações nutricionais extraídas, gerando cardápio...');
+    const padraoAlimentar = extractionResponse.choices[0].message.content;
+    console.log('Padrão alimentar extraído, gerando cardápio...');
 
-    // Now generate the menu with the extracted content
+    // Agora, gerar o cardápio baseado no padrão extraído
     const menuResponse = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: "Create a menu based on these nutritional guidelines. Be precise with measurements and follow all dietary restrictions."
+          content: `Você é um nutricionista especializado em criar cardápios personalizados.
+          
+          Use o padrão alimentar fornecido para criar um cardápio que siga ESTRITAMENTE:
+          1. Os horários especificados para cada refeição
+          2. As quantidades exatas de cada alimento
+          3. As restrições alimentares mencionadas
+          4. As substituições permitidas
+          
+          REGRAS IMPORTANTES:
+          - NUNCA repita a mesma refeição no mesmo dia
+          - NUNCA inclua alimentos não permitidos no plano
+          - SEMPRE mantenha as quantidades exatas especificadas
+          - SEMPRE alterne as opções permitidas para garantir variedade
+          - SEMPRE respeite as restrições alimentares
+          
+          Retorne o cardápio em formato JSON seguindo exatamente esta estrutura:
+          {
+            "days": [
+              {
+                "day": "Segunda-feira",
+                "meals": [
+                  {
+                    "meal": "Nome da refeição (ex: Café da Manhã)",
+                    "description": "Descrição detalhada da refeição",
+                    "ingredients": [
+                      {
+                        "name": "Nome do ingrediente",
+                        "quantity": "Quantidade necessária",
+                        "estimatedCost": 0.00
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "totalCost": 0.00
+          }`
         },
         {
           role: "user",
-          content: extractedContent
+          content: `Crie um cardápio baseado neste padrão alimentar: ${padraoAlimentar}`
         }
       ],
+      response_format: { type: "json_object" },
       max_tokens: 2000
     });
 
