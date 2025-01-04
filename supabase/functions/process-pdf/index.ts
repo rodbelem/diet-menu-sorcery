@@ -8,6 +8,18 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function truncateText(text: string, maxTokens = 100000): string {
+  // Approximate tokens by characters (1 token ≈ 4 characters)
+  const maxChars = maxTokens * 4;
+  if (text.length <= maxChars) return text;
+  
+  // Find the last complete sentence before the limit
+  const truncated = text.substring(0, maxChars);
+  const lastPeriod = truncated.lastIndexOf('.');
+  
+  return lastPeriod > 0 ? truncated.substring(0, lastPeriod + 1) : truncated;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -20,13 +32,9 @@ serve(async (req) => {
     const pdfText = atob(pdfBase64);
     console.log('[2/4] PDF decodificado, tamanho:', pdfText.length, 'caracteres');
     
-    // Estimar o número de tokens (aproximadamente 4 caracteres por token)
-    const estimatedTokens = Math.ceil(pdfText.length / 4);
-    console.log(`[3/4] Tokens estimados: ${estimatedTokens}`);
-
-    // Escolher o modelo baseado no tamanho do texto
-    const model = estimatedTokens > 128000 ? "gpt-4o-mini" : "gpt-4o";
-    console.log(`Usando modelo ${model} para processar o texto`);
+    // Truncate text to fit within token limits
+    const truncatedText = truncateText(pdfText);
+    console.log('[3/4] Texto truncado para:', truncatedText.length, 'caracteres');
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -35,7 +43,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: model,
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -43,7 +51,7 @@ serve(async (req) => {
           },
           {
             role: "user",
-            content: pdfText
+            content: truncatedText
           }
         ],
         response_format: { type: "json_object" }
@@ -60,12 +68,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ content: data.choices[0].message.content }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        } 
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
     console.error('Erro detalhado ao processar PDF:', error);
@@ -73,10 +76,7 @@ serve(async (req) => {
       JSON.stringify({ error: error.message }), 
       { 
         status: 500,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   }
