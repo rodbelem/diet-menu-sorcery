@@ -1,6 +1,5 @@
 import OpenAI from 'openai';
-import { getAIConfig } from "./config";
-import { AI_CONFIG } from './config';
+import { getAIConfig, AI_CONFIG } from "./config";
 
 export const generateWithOpenAI = async (prompt: string) => {
   const config = await getAIConfig();
@@ -20,7 +19,7 @@ export const generateWithOpenAI = async (prompt: string) => {
     });
 
     return completion.choices[0].message.content;
-  } catch (error) {
+  } catch (error: any) {
     if (error.message?.includes('maximum context length')) {
       console.log('Texto muito longo para OpenAI, alternando para Claude...');
       throw new Error('TOKEN_LIMIT_EXCEEDED');
