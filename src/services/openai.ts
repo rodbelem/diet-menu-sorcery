@@ -89,6 +89,32 @@ Retorne os dados no seguinte formato JSON:
   }
 };
 
+export const generateShoppingList = async (menu: Menu) => {
+  const openai = await getOpenAIClient();
+  
+  const prompt = `Perfeito. Você é um exímio nutricionista e agora a sua tarefa é analisar todo o cardápio abaixo e me criar uma lista com todos os ingredientes necessários com suas devidas quantidades para fazê-lo.
+
+Seja inteligente na hora de trazer as medidas de cada ingrediente, pense que o objetivo é que isso seja uma lista de supermercado.
+
+CARDAPIO: ${JSON.stringify(menu, null, 2)}`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "gpt-4o",
+      response_format: { type: "json_object" }
+    });
+
+    const response = completion.choices[0].message.content;
+    if (!response) throw new Error("Não foi possível gerar a lista de compras");
+    
+    return JSON.parse(response);
+  } catch (error) {
+    console.error("Erro ao gerar lista de compras:", error);
+    throw error;
+  }
+};
+
 export const regenerateMeal = async (pdfContent: string, mealType: string) => {
   const openai = await getOpenAIClient();
   
