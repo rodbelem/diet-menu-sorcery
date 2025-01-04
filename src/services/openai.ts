@@ -20,65 +20,57 @@ const getOpenAIClient = async () => {
 export const generateMenu = async (pdfContent: string, period: "weekly" | "biweekly") => {
   const openai = await getOpenAIClient();
   
-  const prompt = `Você é um nutricionista especializado em criar cardápios personalizados. Analise cuidadosamente o seguinte planejamento alimentar e crie um cardápio que siga ESTRITAMENTE as orientações fornecidas:
+  const periodConfig = {
+    weekly: {
+      days: "7",
+      type: "semanal",
+      period: "semana"
+    },
+    biweekly: {
+      days: "15",
+      type: "quinzenal",
+      period: "quinzena"
+    }
+  };
 
-  ${pdfContent}
-
-  REGRAS CRÍTICAS DE ANÁLISE:
-  1. PRIMEIRO, identifique com precisão no planejamento alimentar:
-     - Liste TODAS as refeições prescritas (café da manhã, lanche da manhã, almoço, lanche da tarde, jantar, ceia)
-     - Anote os horários EXATOS de cada refeição
-     - Catalogue TODAS as quantidades específicas de cada alimento
-     - Liste TODOS os tipos de alimentos permitidos e suas variações
-     - Identifique TODAS as restrições alimentares mencionadas
-     - Observe TODAS as substituições permitidas para cada alimento
-
-  2. REGRAS ESTRITAS para geração do cardápio:
-     - NUNCA repita a mesma refeição no mesmo dia
-     - NUNCA inclua alimentos que não estão explicitamente permitidos no planejamento
-     - SEMPRE mantenha as quantidades exatas especificadas
-     - SEMPRE respeite os horários definidos para cada refeição
-     - SEMPRE alterne as opções de alimentos permitidos para garantir variedade
-     - NUNCA exceda as porções especificadas
-     - SEMPRE respeite as restrições alimentares mencionadas
-
-  3. VERIFICAÇÃO FINAL obrigatória:
-     - Confirme que cada refeição está 100% alinhada com o planejamento
-     - Verifique se não há repetições inadequadas
-     - Confirme que todas as quantidades estão corretas
-     - Certifique-se que não há alimentos não permitidos
-     - Verifique se todas as restrições foram respeitadas
-
-  Gere um cardápio ${period === "weekly" ? "semanal (7 dias)" : "quinzenal (15 dias)"} que:
-  - Comece na segunda-feira e vá até ${period === "weekly" ? "domingo" : "o domingo da segunda semana"}
-  - Inclua TODAS as refeições especificadas no planejamento para cada dia
-  - Mantenha EXATAMENTE as mesmas quantidades e tipos de alimentos do planejamento
-  - Garanta variedade nas refeições ao longo dos dias
-
-  Após gerar o cardápio, crie uma lista de compras com todos os ingredientes necessários, incluindo uma estimativa de custo para cada item e o custo total.
+  const config = periodConfig[period];
   
-  Retorne os dados no seguinte formato JSON:
-  {
-    "days": [
-      {
-        "day": "Segunda-feira",
-        "meals": [
-          {
-            "meal": "Nome da refeição conforme está no planejamento",
-            "description": "Descrição detalhada da refeição",
-            "ingredients": [
-              {
-                "name": "Nome do ingrediente",
-                "quantity": "Quantidade necessária",
-                "estimatedCost": 0.00
-              }
-            ]
-          }
-        ]
-      }
-    ],
-    "totalCost": 0.00
-  }`;
+  const prompt = `Você é um nutricionista especializado em montar sugestões de cardápios para pacientes com base no padrão utilizado em seus respectivos planejamentos alimentares. 
+
+O que você precisa fazer é simples -> Analise o padrão alimentar abaixo de refeições, prestando atenção aos alimentos e suas quantidades e crie uma sugestão de cardápio ${config.type}, contendo os ${config.days} dias da ${config.period} com cada uma de suas refeições, baseado no padrão abaixo.
+
+"""
+${pdfContent}
+"""
+
+Regras: 
+
+1) Você deve trazer o cardápio completo com todos os ${config.days} dias e as refeições de cada dia. 
+2) Você deve analisar principalmente frutas/leguminosas/verduras/legumes/proteínas e pensar em substitutos similares 
+3) Traga o cardápio já montado, não precisa trazer opções variadas para um mesmo dia, é o cardápio montado que eu quero.
+
+Retorne os dados no seguinte formato JSON:
+{
+  "days": [
+    {
+      "day": "Segunda-feira",
+      "meals": [
+        {
+          "meal": "Nome da refeição conforme está no planejamento",
+          "description": "Descrição detalhada da refeição",
+          "ingredients": [
+            {
+              "name": "Nome do ingrediente",
+              "quantity": "Quantidade necessária",
+              "estimatedCost": 0.00
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "totalCost": 0.00
+}`;
 
   try {
     const completion = await openai.chat.completions.create({
