@@ -26,20 +26,14 @@ serve(async (req) => {
       messages: [
         {
           role: "system",
-          content: "You are a nutrition expert. Analyze the PDF image and extract ONLY:\n1. Meal times\n2. Allowed foods and their exact quantities\n3. Any dietary restrictions\nBe extremely concise and precise with measurements."
+          content: "You are a nutrition expert. Analyze the PDF content and extract ONLY:\n1. Meal times\n2. Allowed foods and their exact quantities\n3. Any dietary restrictions\nBe extremely concise and precise with measurements."
         },
         {
           role: "user",
           content: [
             {
-              type: "image",
-              image_url: {
-                url: `data:application/pdf;base64,${pdfBase64}`
-              }
-            },
-            {
               type: "text",
-              text: "Extract the nutritional information from this PDF, focusing only on meal times, allowed foods with exact quantities, and any dietary restrictions. Be concise."
+              text: `Here is the PDF content in base64: ${pdfBase64}`
             }
           ]
         }
