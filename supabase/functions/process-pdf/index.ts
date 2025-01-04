@@ -9,7 +9,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -18,45 +17,46 @@ serve(async (req) => {
     const { pdfBase64 } = await req.json();
     console.log('[1/4] Iniciando processamento do PDF...');
     
-    // Decode base64 to text
     const pdfText = atob(pdfBase64);
     console.log('[2/4] PDF decodificado, tamanho:', pdfText.length, 'caracteres');
+    console.log('Conteúdo do PDF:', pdfText.substring(0, 200) + '...');
     
-    // Extract only the relevant sections (first 2000 characters should be enough for the meal plan)
     const truncatedText = pdfText.slice(0, 2000);
-    console.log('[3/4] Texto truncado para os primeiros 2000 caracteres para evitar limite de tokens');
-
+    console.log('[3/4] Texto truncado para os primeiros 2000 caracteres');
+    
     console.log('[4/4] Enviando requisição para OpenAI...');
+    const openAIBody = {
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "Você é um nutricionista especializado em analisar planos alimentares. Extraia o padrão de cada refeição e retorne em formato JSON. A resposta deve ser um objeto JSON válido."
+        },
+        {
+          role: "user",
+          content: truncatedText
+        }
+      ],
+      response_format: { type: "json_object" }
+    };
+    
+    console.log('Corpo da requisição para OpenAI:', JSON.stringify(openAIBody, null, 2));
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: "Você é um nutricionista especializado em analisar planos alimentares. Extraia o padrão de cada refeição e retorne em formato JSON. A resposta deve ser um objeto JSON válido."
-          },
-          {
-            role: "user",
-            content: truncatedText
-          }
-        ],
-        response_format: { type: "json_object" }
-      }),
+      body: JSON.stringify(openAIBody),
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      console.error('Erro na resposta da OpenAI:', error);
-      throw new Error(error.error?.message || 'Erro ao processar o PDF');
-    }
-
     const data = await response.json();
-    console.log('Resposta da OpenAI recebida com sucesso');
+    console.log('Resposta da OpenAI:', JSON.stringify(data, null, 2));
+
+    if (!response.ok) {
+      throw new Error(data.error?.message || 'Erro ao processar o PDF');
+    }
 
     return new Response(
       JSON.stringify({ content: data.choices[0].message.content }),
@@ -68,7 +68,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Erro ao processar PDF:', error);
+    console.error('Erro detalhado ao processar PDF:', error);
     return new Response(
       JSON.stringify({ error: error.message }), 
       { 
