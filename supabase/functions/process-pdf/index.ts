@@ -20,24 +20,24 @@ serve(async (req) => {
 
     console.log('Iniciando processamento do PDF...');
 
-    // First, extract only the relevant nutritional information
+    // First, extract only the essential nutritional information with a focused prompt
     const extractionResponse = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: "Extraia apenas as informações nutricionais essenciais do plano alimentar: refeições, horários, alimentos permitidos e suas quantidades exatas. Mantenha as unidades de medida originais."
+          content: "Extract ONLY the following from the nutritional plan, nothing else:\n1. Meal times\n2. Allowed foods and their exact quantities\n3. Any dietary restrictions\nBe extremely concise."
         },
         {
           role: "user",
           content: pdfBase64
         }
       ],
-      max_tokens: 4000
+      max_tokens: 2000
     });
 
     const extractedContent = extractionResponse.choices[0].message.content;
-    console.log('Conteúdo extraído, gerando cardápio...');
+    console.log('Informações nutricionais extraídas, gerando cardápio...');
 
     // Now generate the menu with the extracted content
     const menuResponse = await openai.chat.completions.create({
@@ -45,15 +45,14 @@ serve(async (req) => {
       messages: [
         {
           role: "system",
-          content: "Crie um cardápio baseado nas informações nutricionais fornecidas. Mantenha EXATAMENTE as mesmas unidades de medida e quantidades especificadas no plano."
+          content: "Create a menu based on these nutritional guidelines. Be precise with measurements."
         },
         {
           role: "user",
           content: extractedContent
         }
       ],
-      response_format: { type: "json_object" },
-      max_tokens: 4000
+      max_tokens: 2000
     });
 
     console.log('Cardápio gerado com sucesso');
