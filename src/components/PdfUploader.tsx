@@ -4,9 +4,10 @@ import { Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as pdfjsLib from 'pdfjs-dist';
 import { supabase } from "@/integrations/supabase/client";
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.entry';
 
-// Configurar worker do PDF.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Configure worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface PdfUploaderProps {
   onContentExtracted: (content: string) => void;
@@ -24,7 +25,7 @@ export const PdfUploader = ({ onContentExtracted }: PdfUploaderProps) => {
       
       let fullText = '';
       
-      // Extrair texto de todas as páginas
+      // Extract text from all pages
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
@@ -76,11 +77,11 @@ export const PdfUploader = ({ onContentExtracted }: PdfUploaderProps) => {
         console.log('Arquivo selecionado:', file.name);
         console.log('Tamanho do arquivo:', file.size, 'bytes');
         
-        // Extrair texto do PDF
+        // Extract text from PDF
         const pdfText = await extractTextFromPdf(file);
         console.log('Texto extraído com sucesso');
         
-        // Processar o texto com OpenAI
+        // Process the text with OpenAI
         const processedText = await processPdfWithOpenAI(pdfText);
         console.log('Texto processado com sucesso');
         
