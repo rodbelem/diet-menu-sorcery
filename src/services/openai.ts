@@ -75,31 +75,24 @@ export const generateMenu = async (pdfContent: string, period: "weekly" | "biwee
 };
 
 export const regenerateMeal = async (pdfContent: string, mealType: string) => {
-  const prompt = `Analise cuidadosamente o seguinte planejamento alimentar e gere uma nova opção para a refeição "${mealType}" que:
-1) Use APENAS alimentos explicitamente permitidos no planejamento
-2) Mantenha EXATAMENTE as mesmas quantidades especificadas
-3) Seja DIFERENTE das outras refeições do dia
-4) Respeite TODAS as restrições alimentares
-
-PLANEJAMENTO:
-${pdfContent}
-
-Retorne os dados em formato JSON seguindo exatamente esta estrutura:
-{
-  "meal": "${mealType}",
-  "description": "Descrição detalhada da refeição",
-  "ingredients": [
-    {
-      "name": "Nome do ingrediente",
-      "quantity": "Quantidade necessária",
-      "estimatedCost": 0.00
-    }
-  ]
-}`;
-
   try {
+    // Primeiro, analisar o PDF para obter o padrão
+    const { data: analysisResponse, error: analysisError } = await supabase.functions.invoke('analyze-pdf', {
+      body: { pdfContent }
+    });
+
+    if (analysisError) {
+      console.error('Error analyzing PDF:', analysisError);
+      throw analysisError;
+    }
+
+    // Gerar nova refeição usando o padrão analisado
     const { data: response, error } = await supabase.functions.invoke('generate-menu', {
-      body: { prompt }
+      body: { 
+        analyzedPattern: analysisResponse.analysis,
+        singleMeal: true,
+        mealType 
+      }
     });
 
     if (error) throw error;
