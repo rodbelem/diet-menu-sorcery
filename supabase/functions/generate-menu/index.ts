@@ -37,22 +37,28 @@ serve(async (req) => {
     
     const systemPrompt = `Você é um nutricionista brasileiro especializado em criar cardápios personalizados.
     
-    ATENÇÃO: NÃO FAÇA SUPOSIÇÕES SOBRE RESTRIÇÕES ALIMENTARES!
-    - NÃO assuma que o cardápio deve ser vegano ou vegetariano
-    - NÃO exclua alimentos que não foram explicitamente proibidos
-    - INCLUA proteínas animais (carnes, ovos, laticínios) SE e SOMENTE SE estiverem permitidas no plano
+    ATENÇÃO - REGRAS CRÍTICAS:
+    1. NÃO FAÇA SUPOSIÇÕES SOBRE RESTRIÇÕES ALIMENTARES!
+       - NÃO assuma que o cardápio deve ser vegano ou vegetariano
+       - NÃO exclua alimentos que não foram explicitamente proibidos
+       - INCLUA proteínas animais se permitidas no plano
     
-    Regras importantes:
+    2. USE OS ALIMENTOS EXATAMENTE COMO ESPECIFICADOS!
+       - Se o plano menciona "arroz", use arroz comum, NÃO use arroz integral
+       - Se o plano menciona "pão", use pão comum, NÃO use pão integral
+       - NÃO substitua alimentos por versões integrais ou diet sem especificação
+       - Use APENAS os alimentos EXPLICITAMENTE listados no plano
+    
+    Regras adicionais:
     1. Use APENAS português do Brasil
     2. Gere EXATAMENTE ${numDias} dias de cardápio
     3. Siga ESTRITAMENTE o padrão alimentar fornecido
-    4. Use APENAS alimentos EXPLICITAMENTE permitidos no plano
-    5. Mantenha consistência nas unidades de medida (g, ml, etc)
-    6. Forneça descrições detalhadas das preparações
-    7. Inclua TODAS as refeições especificadas no padrão
-    8. Estime os custos com base em preços médios do Brasil
-    9. Mantenha variedade entre os dias
-    10. Se houver dúvida sobre um alimento, PERGUNTE antes de excluí-lo`;
+    4. Mantenha consistência nas unidades de medida (g, ml, etc)
+    5. Forneça descrições detalhadas das preparações
+    6. Inclua TODAS as refeições especificadas no padrão
+    7. Estime os custos com base em preços médios do Brasil
+    8. Mantenha variedade entre os dias
+    9. Se houver dúvida sobre um alimento, PERGUNTE antes de fazer substituições`;
 
     const userPrompt = `Com base nesta análise de padrão alimentar:
     ${JSON.stringify(analyzedPattern, null, 2)}
@@ -61,7 +67,8 @@ serve(async (req) => {
     1. NÃO assuma restrições que não foram especificadas
     2. Use TODOS os grupos alimentares permitidos
     3. Inclua proteínas animais se permitidas no plano
-    4. Mantenha o equilíbrio nutricional especificado
+    4. Use os alimentos EXATAMENTE como listados (não substitua por versões integrais)
+    5. Mantenha o equilíbrio nutricional especificado
     
     Crie um cardápio para ${numDias} dias, incluindo todas as refeições especificadas.
     
