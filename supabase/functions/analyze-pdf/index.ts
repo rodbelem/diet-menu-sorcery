@@ -20,7 +20,8 @@ serve(async (req) => {
       throw new Error('PDF content is required');
     }
 
-    console.log('Analyzing PDF with GPT-4o-mini...');
+    console.log('Starting PDF analysis...');
+    console.log('Raw PDF Content:', pdfContent);
     
     // Split content into chunks to handle large PDFs
     const chunkSize = 50000;
@@ -30,8 +31,8 @@ serve(async (req) => {
     }
 
     const initialChunk = chunks[0];
-    console.log(`Processing first chunk of ${initialChunk.length} characters`);
-    console.log('PDF Content (first 500 chars):', initialChunk.substring(0, 500));
+    console.log('Processing PDF content of length:', initialChunk.length);
+    console.log('First 1000 characters of PDF content:', initialChunk.substring(0, 1000));
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
