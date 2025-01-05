@@ -3,9 +3,10 @@ import { Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as pdfjsLib from 'pdfjs-dist';
 import { supabase } from "@/integrations/supabase/client";
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.entry';
 
 // Configure worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface PdfUploaderProps {
   onContentExtracted: (content: string) => void;
