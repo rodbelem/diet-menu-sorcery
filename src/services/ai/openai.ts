@@ -5,7 +5,8 @@ export const generateWithOpenAI = async (prompt: string) => {
   const config = await getAIConfig();
   
   if (!config.openaiApiKey) {
-    throw new Error('OpenAI API key is not configured. Please set it in the Supabase Edge Function secrets.');
+    console.error('OpenAI API key não encontrada');
+    throw new Error('Erro ao acessar a API da OpenAI. Por favor, tente novamente.');
   }
 
   const openai = new OpenAI({
@@ -22,9 +23,18 @@ export const generateWithOpenAI = async (prompt: string) => {
       response_format: { type: "json_object" }
     });
 
+    if (!completion.choices[0].message.content) {
+      throw new Error('Resposta vazia da OpenAI');
+    }
+
     return completion.choices[0].message.content;
   } catch (error: any) {
-    console.error('OpenAI API error:', error);
-    throw error;
+    console.error('Erro detalhado da API OpenAI:', error);
+    
+    if (error.status === 401) {
+      throw new Error('Erro de autenticação com a OpenAI. Verifique a chave da API.');
+    }
+    
+    throw new Error('Erro ao processar com OpenAI: ' + (error.message || 'Erro desconhecido'));
   }
 };

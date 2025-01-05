@@ -7,7 +7,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -16,58 +15,53 @@ serve(async (req) => {
     const { pdfBase64 } = await req.json();
     
     if (!pdfBase64) {
-      console.error('PDF content is missing');
-      throw new Error('PDF content is required');
+      console.error('Conteúdo do PDF ausente');
+      throw new Error('Conteúdo do PDF é obrigatório');
     }
 
-    console.log('Processing PDF content, length:', pdfBase64.length);
+    console.log('Processando conteúdo do PDF, tamanho:', pdfBase64.length);
 
-    // Split content into chunks of 100k characters
-    const chunkSize = 100000;
-    const chunks = [];
-    for (let i = 0; i < pdfBase64.length; i += chunkSize) {
-      chunks.push(pdfBase64.slice(i, i + chunkSize));
-    }
-
-    console.log(`Split PDF content into ${chunks.length} chunks`);
-
-    let processedContent = '';
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-
-    // Process each chunk with OpenAI
-    for (const chunk of chunks) {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a nutrition expert analyzing meal plans. Extract key information and patterns from the provided text, focusing on dietary requirements, restrictions, and meal structure.'
-            },
-            { 
-              role: 'user', 
-              content: `Analyze this part of a PDF content (base64 encoded) and extract relevant nutritional information: ${chunk}`
-            }
-          ],
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.text();
-        console.error('OpenAI API error:', error);
-        throw new Error(`OpenAI API error: ${error}`);
-      }
-
-      const data = await response.json();
-      processedContent += data.choices[0].message.content + '\n\n';
+    if (!openAIApiKey) {
+      console.error('Chave da API OpenAI não encontrada nas variáveis de ambiente');
+      throw new Error('Configuração da OpenAI ausente');
     }
 
-    console.log('Successfully processed all chunks');
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'Você é um especialista em nutrição analisando planos alimentares. Extraia informações e padrões importantes do texto fornecido, focando em requisitos dietéticos, restrições e estrutura das refeições.'
+          },
+          { 
+            role: 'user', 
+            content: `Analise este conteúdo do PDF e extraia as informações nutricionais relevantes: ${pdfBase64}`
+          }
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Erro na API da OpenAI:', errorText);
+      throw new Error(`Erro na API da OpenAI: ${errorText}`);
+    }
+
+    const data = await response.json();
+    const processedContent = data.choices[0].message.content;
+
+    if (!processedContent) {
+      throw new Error('Resposta vazia da OpenAI');
+    }
+
+    console.log('Processamento concluído com sucesso');
 
     return new Response(
       JSON.stringify({ content: processedContent }),
@@ -75,9 +69,12 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in process-pdf function:', error);
+    console.error('Erro na função process-pdf:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message || 'Erro interno no processamento do PDF',
+        details: error.toString()
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
