@@ -1,6 +1,8 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -15,70 +17,50 @@ serve(async (req) => {
     const { pdfBase64 } = await req.json();
     
     if (!pdfBase64) {
-      console.error('Conteúdo do PDF ausente');
-      throw new Error('Conteúdo do PDF é obrigatório');
+      throw new Error('PDF content is required');
     }
 
-    console.log('Processando conteúdo do PDF, tamanho:', pdfBase64.length);
+    console.log('Processando PDF com Claude...');
 
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      console.error('Chave da API OpenAI não encontrada nas variáveis de ambiente');
-      throw new Error('Configuração da OpenAI ausente');
-    }
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
+        'x-api-key': anthropicApiKey!,
+        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
-        messages: [
-          {
-            role: 'system',
-            content: 'Você é um especialista em nutrição analisando planos alimentares. Extraia informações e padrões importantes do texto fornecido, focando em requisitos dietéticos, restrições e estrutura das refeições.'
-          },
-          { 
-            role: 'user', 
-            content: `Analise este conteúdo do PDF e extraia as informações nutricionais relevantes: ${pdfBase64}`
-          }
-        ],
-      }),
+        model: 'claude-3-opus-20240229',
+        max_tokens: 4096,
+        messages: [{
+          role: 'user',
+          content: `Analise este plano alimentar em PDF (codificado em base64) e extraia os padrões nutricionais importantes, restrições alimentares, e estrutura das refeições. Retorne apenas um objeto JSON com a análise:
+          
+          ${pdfBase64}`
+        }]
+      })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Erro na API da OpenAI:', errorText);
-      throw new Error(`Erro na API da OpenAI: ${errorText}`);
+      console.error('Erro na API do Claude:', errorText);
+      throw new Error(`Erro na API do Claude: ${errorText}`);
     }
 
     const data = await response.json();
-    const processedContent = data.choices[0].message.content;
+    const analysis = data.content[0].text;
 
-    if (!processedContent) {
-      throw new Error('Resposta vazia da OpenAI');
-    }
-
-    console.log('Processamento concluído com sucesso');
-
-    return new Response(
-      JSON.stringify({ content: processedContent }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
+    return new Response(JSON.stringify({ content: analysis }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('Erro na função process-pdf:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message || 'Erro interno no processamento do PDF',
-        details: error.toString()
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: error.toString()
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
