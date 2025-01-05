@@ -1,13 +1,10 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getSystemPrompt, getUserPrompt } from "./prompts.ts";
+import { validateGeneratedMenu } from "./validators.ts";
+import { Menu } from "./types.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
 const diasSemana = [
   "Segunda-feira",
   "Terça-feira",
@@ -17,6 +14,11 @@ const diasSemana = [
   "Sábado",
   "Domingo"
 ];
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -35,89 +37,6 @@ serve(async (req) => {
     console.log('Single Meal:', singleMeal);
     console.log('Meal Type:', mealType);
 
-    let systemPrompt = `Você é um nutricionista brasileiro especializado em criar cardápios personalizados.
-    
-    ATENÇÃO - REGRAS CRÍTICAS:
-    1. NÃO FAÇA SUPOSIÇÕES SOBRE RESTRIÇÕES ALIMENTARES!
-       - NÃO assuma que o cardápio deve ser vegano ou vegetariano
-       - NÃO exclua alimentos que não foram explicitamente proibidos
-       - INCLUA proteínas animais se permitidas no plano
-    
-    2. USE OS ALIMENTOS EXATAMENTE COMO ESPECIFICADOS!
-       - Se o plano menciona "arroz", use arroz comum, NÃO use arroz integral
-       - Se o plano menciona "pão", use pão comum, NÃO use pão integral
-       - NÃO substitua alimentos por versões integrais ou diet sem especificação
-       - Use APENAS os alimentos EXPLICITAMENTE listados no plano
-       
-    3. IMPORTANTE: Você DEVE gerar EXATAMENTE o mesmo número de refeições por dia que está especificado no plano analisado.
-       - Analise cuidadosamente o padrão para identificar todas as refeições diárias
-       - Inclua TODAS as refeições mencionadas no plano (café da manhã, lanche da manhã, almoço, lanche da tarde, jantar, ceia, etc)
-       - NÃO omita nenhuma refeição que esteja no plano original`;
-
-    let userPrompt;
-    
-    if (singleMeal) {
-      userPrompt = `Com base nesta análise de padrão alimentar:
-      ${JSON.stringify(analyzedPattern, null, 2)}
-      
-      IMPORTANTE:
-      1. NÃO assuma restrições que não foram especificadas
-      2. Use TODOS os grupos alimentares permitidos
-      3. Inclua proteínas animais se permitidas no plano
-      4. Use os alimentos EXATAMENTE como listados (não substitua por versões integrais)
-      
-      Gere UMA NOVA opção para a refeição "${mealType}".
-      
-      Retorne um objeto JSON no seguinte formato:
-      {
-        "meal": "Nome da refeição",
-        "description": "Descrição detalhada",
-        "ingredients": [
-          {
-            "name": "Nome do ingrediente",
-            "quantity": "Quantidade com unidade",
-            "estimatedCost": 0.00
-          }
-        ]
-      }`;
-    } else {
-      const numDias = period === 'weekly' ? 7 : 14;
-      userPrompt = `Com base nesta análise de padrão alimentar:
-      ${JSON.stringify(analyzedPattern, null, 2)}
-      
-      IMPORTANTE:
-      1. NÃO assuma restrições que não foram especificadas
-      2. Use TODOS os grupos alimentares permitidos
-      3. Inclua proteínas animais se permitidas no plano
-      4. Use os alimentos EXATAMENTE como listados (não substitua por versões integrais)
-      5. INCLUA TODAS as refeições mencionadas no plano analisado (café da manhã, lanche da manhã, almoço, lanche da tarde, jantar, ceia, etc)
-      
-      Crie um cardápio para ${numDias} dias, incluindo TODAS as refeições especificadas no plano.
-      
-      Retorne um objeto JSON no seguinte formato:
-      {
-        "days": [
-          {
-            "day": "Nome do dia",
-            "meals": [
-              {
-                "meal": "Nome da refeição",
-                "description": "Descrição detalhada",
-                "ingredients": [
-                  {
-                    "name": "Nome do ingrediente",
-                    "quantity": "Quantidade com unidade",
-                    "estimatedCost": 0.00
-                  }
-                ]
-              }
-            ]
-          }
-        ],
-        "totalCost": 0.00
-      }`;
-    }
-
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -127,8 +46,8 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+          { role: 'system', content: getSystemPrompt() },
+          { role: 'user', content: getUserPrompt(analyzedPattern, period, singleMeal, mealType) }
         ],
         temperature: 0.7,
       }),
@@ -168,21 +87,7 @@ serve(async (req) => {
 
     if (!singleMeal) {
       const numDias = period === 'weekly' ? 7 : 14;
-      if (result.days.length !== numDias) {
-        console.error(`Número incorreto de dias gerado: ${result.days.length}, esperado: ${numDias}`);
-        throw new Error('Número incorreto de dias gerado');
-      }
-
-      // Verificar se todas as refeições estão presentes
-      const refeicoesPadrao = Object.keys(analyzedPattern.meal_types || {});
-      for (const day of result.days) {
-        const refeicoesGeradas = day.meals.map(m => m.meal);
-        const faltando = refeicoesPadrao.filter(r => !refeicoesGeradas.includes(r));
-        if (faltando.length > 0) {
-          console.error(`Refeições faltando no dia ${day.day}:`, faltando);
-          throw new Error(`Refeições faltando no cardápio: ${faltando.join(', ')}`);
-        }
-      }
+      result = validateGeneratedMenu(result, numDias, analyzedPattern);
 
       result.days = result.days.map((day: any, index: number) => {
         const dayIndex = index % 7;
