@@ -31,22 +31,37 @@ serve(async (req) => {
     }
 
     console.log('Generating menu with OpenAI...');
+    console.log('Analyzed Pattern:', JSON.stringify(analyzedPattern, null, 2));
+    
     const numDias = period === 'weekly' ? 7 : 14;
     
     const systemPrompt = `Você é um nutricionista brasileiro especializado em criar cardápios personalizados.
-    Algumas regras importantes:
+    
+    ATENÇÃO: NÃO FAÇA SUPOSIÇÕES SOBRE RESTRIÇÕES ALIMENTARES!
+    - NÃO assuma que o cardápio deve ser vegano ou vegetariano
+    - NÃO exclua alimentos que não foram explicitamente proibidos
+    - INCLUA proteínas animais (carnes, ovos, laticínios) SE e SOMENTE SE estiverem permitidas no plano
+    
+    Regras importantes:
     1. Use APENAS português do Brasil
     2. Gere EXATAMENTE ${numDias} dias de cardápio
     3. Siga ESTRITAMENTE o padrão alimentar fornecido
-    4. Mantenha consistência nas unidades de medida (g, ml, etc)
-    5. Forneça descrições detalhadas das preparações
-    6. Inclua TODAS as refeições especificadas no padrão
-    7. Estime os custos com base em preços médios do Brasil
-    8. Mantenha variedade entre os dias
-    9. Inclua APENAS alimentos permitidos no padrão`;
+    4. Use APENAS alimentos EXPLICITAMENTE permitidos no plano
+    5. Mantenha consistência nas unidades de medida (g, ml, etc)
+    6. Forneça descrições detalhadas das preparações
+    7. Inclua TODAS as refeições especificadas no padrão
+    8. Estime os custos com base em preços médios do Brasil
+    9. Mantenha variedade entre os dias
+    10. Se houver dúvida sobre um alimento, PERGUNTE antes de excluí-lo`;
 
     const userPrompt = `Com base nesta análise de padrão alimentar:
     ${JSON.stringify(analyzedPattern, null, 2)}
+    
+    IMPORTANTE:
+    1. NÃO assuma restrições que não foram especificadas
+    2. Use TODOS os grupos alimentares permitidos
+    3. Inclua proteínas animais se permitidas no plano
+    4. Mantenha o equilíbrio nutricional especificado
     
     Crie um cardápio para ${numDias} dias, incluindo todas as refeições especificadas.
     
@@ -121,6 +136,7 @@ serve(async (req) => {
     });
 
     console.log('Menu gerado com sucesso');
+    console.log('Primeiro dia de exemplo:', JSON.stringify(menu.days[0], null, 2));
 
     return new Response(JSON.stringify({ menu: JSON.stringify(menu) }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
