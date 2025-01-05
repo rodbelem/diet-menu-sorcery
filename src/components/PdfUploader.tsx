@@ -4,8 +4,8 @@ import { useToast } from "@/hooks/use-toast";
 import * as pdfjsLib from 'pdfjs-dist';
 import { supabase } from "@/integrations/supabase/client";
 
-// Configure worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// Configure worker with a more reliable CDN
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.js`;
 
 interface PdfUploaderProps {
   onContentExtracted: (content: string) => void;
@@ -23,44 +23,74 @@ export const PdfUploader = ({ onContentExtracted }: PdfUploaderProps) => {
       
       let fullText = '';
       
-      // Extract text from all pages
+      // Extract text from all pages while preserving layout
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(' ');
-        fullText += pageText + '\n';
+        
+        // Sort items by their vertical position to maintain layout
+        const sortedItems = textContent.items.sort((a: any, b: any) => {
+          if (Math.abs(a.transform[5] - b.transform[5]) < 5) {
+            // If y positions are similar, sort by x position
+            return a.transform[4] - b.transform[4];
+          }
+          // Sort by y position (reversed because PDF coordinates start from bottom)
+          return b.transform[5] - a.transform[5];
+        });
+
+        let currentY = 0;
+        let currentLine = '';
+
+        // Process items while maintaining layout
+        sortedItems.forEach((item: any) => {
+          const y = Math.round(item.transform[5]);
+          
+          // If we're on a new line
+          if (currentY !== y && currentY !== 0) {
+            fullText += currentLine.trim() + '\n';
+            currentLine = '';
+          }
+          
+          currentY = y;
+          currentLine += item.str + ' ';
+        });
+
+        // Add the last line of the page
+        if (currentLine) {
+          fullText += currentLine.trim() + '\n';
+        }
+
+        // Add page separator
+        fullText += '\n--- Page ' + i + ' ---\n\n';
       }
       
-      console.log('Texto extraído do PDF:', fullText);
-      console.log('Tamanho do texto extraído:', fullText.length, 'caracteres');
-      
+      console.log('Extracted text with layout preservation:', fullText);
       return fullText;
     } catch (error) {
-      console.error('Erro ao extrair texto do PDF:', error);
+      console.error('Error extracting text from PDF:', error);
       throw new Error('Não foi possível extrair o texto do PDF');
     }
   };
 
   const processPdfWithOpenAI = async (pdfText: string): Promise<string> => {
     try {
-      console.log('Enviando texto para processamento...');
-      console.log('Tamanho do texto:', pdfText.length, 'caracteres');
+      console.log('Sending text for processing with layout information...');
       
       const { data, error } = await supabase.functions.invoke('process-pdf', {
-        body: { pdfContent: pdfText }
+        body: { 
+          pdfContent: pdfText,
+          preserveLayout: true // Signal that layout is preserved
+        }
       });
 
       if (error) {
-        console.error('Erro na função do Supabase:', error);
+        console.error('Supabase function error:', error);
         throw new Error('Erro ao processar o PDF');
       }
 
-      console.log('PDF processado com sucesso');
       return data.content;
     } catch (error) {
-      console.error('Erro detalhado ao processar PDF:', error);
+      console.error('Detailed error processing PDF:', error);
       throw new Error('Não foi possível processar o conteúdo do PDF');
     }
   };
@@ -72,16 +102,12 @@ export const PdfUploader = ({ onContentExtracted }: PdfUploaderProps) => {
       setSelectedFile(file);
       
       try {
-        console.log('Arquivo selecionado:', file.name);
-        console.log('Tamanho do arquivo:', file.size, 'bytes');
-        
-        // Extract text from PDF
+        console.log('Processing file:', file.name);
         const pdfText = await extractTextFromPdf(file);
-        console.log('Texto extraído com sucesso');
+        console.log('Text extracted successfully with layout preservation');
         
-        // Process the text with OpenAI
         const processedText = await processPdfWithOpenAI(pdfText);
-        console.log('Texto processado com sucesso');
+        console.log('Text processed successfully');
         
         onContentExtracted(processedText);
         toast({
@@ -89,7 +115,7 @@ export const PdfUploader = ({ onContentExtracted }: PdfUploaderProps) => {
           description: "O conteúdo do PDF foi extraído e está pronto para processamento.",
         });
       } catch (error) {
-        console.error('Erro ao processar arquivo:', error);
+        console.error('Error processing file:', error);
         toast({
           title: "Erro ao processar PDF",
           description: "Não foi possível extrair o conteúdo do PDF. Tente novamente.",
