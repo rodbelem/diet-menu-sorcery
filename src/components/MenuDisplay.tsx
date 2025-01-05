@@ -40,7 +40,7 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
             document={<MenuPDF menu={menu} />}
             fileName="cardapio.pdf"
           >
-            {({ loading }) => (
+            {({ loading }: { loading: boolean }) => (
               <Button
                 variant="outline"
                 disabled={loading}

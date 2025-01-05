@@ -20,18 +20,11 @@ serve(async (req) => {
       throw new Error('PDF content is required');
     }
 
-    console.log('Processing PDF with GPT-4o-mini...');
+    console.log('Processing PDF with GPT-4o...');
+    console.log('Base64 content length:', pdfBase64.length);
     
-    // Split the base64 content into chunks to handle large PDFs
-    const chunkSize = 50000; // Reduced chunk size for gpt-4o-mini
-    const chunks = [];
-    for (let i = 0; i < pdfBase64.length; i += chunkSize) {
-      chunks.push(pdfBase64.slice(i, i + chunkSize));
-    }
-    
-    // Process first chunk to get main patterns
-    const initialChunk = chunks[0];
-    console.log(`Processing initial chunk of size: ${initialChunk.length}`);
+    // Process the entire PDF content at once
+    console.log('Processing complete PDF content...');
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -40,19 +33,25 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
-            content: 'You are a nutrition expert analyzing meal plans. Extract important patterns from the provided text, focusing on dietary requirements, restrictions, and meal structure. Return a concise JSON object with the analysis.'
+            content: `You are a PDF content extractor. Your task is to extract ALL text content from the provided PDF, maintaining all the important information about meals, portions, and dietary requirements. Do not summarize or modify the content. Return the complete extracted text.
+
+IMPORTANT:
+1. Extract and return ALL text content
+2. Do not summarize or modify the content
+3. Maintain all specific details about meals, portions, and requirements
+4. If you see base64 encoded content, decode it first`
           },
           {
             role: 'user',
-            content: `Analyze this meal plan PDF content (base64 encoded) and extract the key nutritional patterns:
-            ${initialChunk}`
+            content: `Extract and return the complete text content from this PDF (base64 encoded). Do not modify or summarize the content:
+            ${pdfBase64}`
           }
         ],
-        response_format: { type: "json_object" }
+        temperature: 0.1
       }),
     });
 
@@ -63,9 +62,13 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const analysis = data.choices[0].message.content;
+    const extractedContent = data.choices[0].message.content;
+    
+    console.log('Content extraction completed');
+    console.log('Extracted content length:', extractedContent.length);
+    console.log('Sample of extracted content:', extractedContent.substring(0, 200));
 
-    return new Response(JSON.stringify({ content: analysis }), {
+    return new Response(JSON.stringify({ content: extractedContent }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
