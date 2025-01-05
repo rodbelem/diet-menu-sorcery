@@ -1,54 +1,40 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-function chunkText(text: string, maxLength = 100000): string[] {
-  const chunks: string[] = [];
-  let currentChunk = '';
-  
-  // Split by paragraphs or sections
-  const sections = text.split(/\n\n+/);
-  
-  for (const section of sections) {
-    if ((currentChunk + section).length <= maxLength) {
-      currentChunk += (currentChunk ? '\n\n' : '') + section;
-    } else {
-      if (currentChunk) {
-        chunks.push(currentChunk);
-      }
-      currentChunk = section;
-    }
-  }
-  
-  if (currentChunk) {
-    chunks.push(currentChunk);
-  }
-  
-  return chunks;
-}
-
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { pdfContent } = await req.json();
-    console.log('Received PDF content, length:', pdfContent.length);
+    const { pdfBase64 } = await req.json();
+    
+    if (!pdfBase64) {
+      console.error('PDF content is missing');
+      throw new Error('PDF content is required');
+    }
 
-    // Split content into manageable chunks
-    const chunks = chunkText(pdfContent);
-    console.log('Split content into', chunks.length, 'chunks');
+    console.log('Processing PDF content, length:', pdfBase64.length);
+
+    // Split content into chunks of 100k characters
+    const chunkSize = 100000;
+    const chunks = [];
+    for (let i = 0; i < pdfBase64.length; i += chunkSize) {
+      chunks.push(pdfBase64.slice(i, i + chunkSize));
+    }
+
+    console.log(`Split PDF content into ${chunks.length} chunks`);
 
     let processedContent = '';
-    
-    // Process each chunk
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+
+    // Process each chunk with OpenAI
     for (const chunk of chunks) {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -61,50 +47,30 @@ serve(async (req) => {
           messages: [
             {
               role: 'system',
-              content: 'You are a nutrition expert analyzing meal plans. Extract key information and patterns from the provided text. Focus on dietary requirements, restrictions, and meal structure.'
+              content: 'You are a nutrition expert analyzing meal plans. Extract key information and patterns from the provided text, focusing on dietary requirements, restrictions, and meal structure.'
             },
-            { role: 'user', content: chunk }
+            { 
+              role: 'user', 
+              content: `Analyze this part of a PDF content (base64 encoded) and extract relevant nutritional information: ${chunk}`
+            }
           ],
-          response_format: { type: "text" }
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${await response.text()}`);
+        const error = await response.text();
+        console.error('OpenAI API error:', error);
+        throw new Error(`OpenAI API error: ${error}`);
       }
 
       const data = await response.json();
       processedContent += data.choices[0].message.content + '\n\n';
     }
 
-    // Final analysis of the combined processed content
-    const finalResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a nutrition expert. Create a structured summary of the analyzed meal plan.'
-          },
-          { role: 'user', content: processedContent }
-        ],
-        response_format: { type: "text" }
-      }),
-    });
+    console.log('Successfully processed all chunks');
 
-    if (!finalResponse.ok) {
-      throw new Error(`OpenAI API error in final analysis: ${await finalResponse.text()}`);
-    }
-
-    const finalData = await finalResponse.json();
-    
     return new Response(
-      JSON.stringify({ content: finalData.choices[0].message.content }),
+      JSON.stringify({ content: processedContent }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
@@ -112,7 +78,10 @@ serve(async (req) => {
     console.error('Error in process-pdf function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
     );
   }
 });
