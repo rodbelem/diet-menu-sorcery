@@ -34,7 +34,7 @@ serve(async (req) => {
     console.log('Analyzed Pattern:', JSON.stringify(analyzedPattern, null, 2));
     console.log('Single Meal:', singleMeal);
     console.log('Meal Type:', mealType);
-    
+
     let systemPrompt = `Você é um nutricionista brasileiro especializado em criar cardápios personalizados.
     
     ATENÇÃO - REGRAS CRÍTICAS:
@@ -119,7 +119,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
