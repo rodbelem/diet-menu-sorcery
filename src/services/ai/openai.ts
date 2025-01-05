@@ -4,6 +4,10 @@ import { getAIConfig, AI_CONFIG } from "./config";
 export const generateWithOpenAI = async (prompt: string) => {
   const config = await getAIConfig();
   
+  if (!config.openaiApiKey) {
+    throw new Error('OpenAI API key is not configured. Please set it in the Supabase Edge Function secrets.');
+  }
+
   const openai = new OpenAI({
     apiKey: config.openaiApiKey,
     dangerouslyAllowBrowser: true
