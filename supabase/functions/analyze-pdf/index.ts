@@ -31,6 +31,7 @@ serve(async (req) => {
 
     const initialChunk = chunks[0];
     console.log(`Processing first chunk of ${initialChunk.length} characters`);
+    console.log('PDF Content (first 500 chars):', initialChunk.substring(0, 500));
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -43,16 +44,36 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are a nutrition expert specialized in analyzing meal plans and extracting patterns. Return all responses in JSON format.'
+            content: `You are a nutrition expert specialized in analyzing meal plans and extracting patterns. 
+            IMPORTANT: Do not make assumptions about dietary restrictions. Only extract what is explicitly stated in the plan.
+            Return all responses in JSON format with the following structure:
+            {
+              "meal_types": {
+                "meal_name": {
+                  "allowed_foods": [],
+                  "portions": [],
+                  "restrictions": []
+                }
+              },
+              "dietary_restrictions": [],
+              "allowed_proteins": [],
+              "allowed_carbs": [],
+              "allowed_vegetables": [],
+              "allowed_fruits": [],
+              "allowed_dairy": [],
+              "timing": {}
+            }`
           },
           {
             role: 'user',
             content: `Analise cuidadosamente este plano nutricional e extraia todas as informações relevantes sobre:
             1) Horários e tipos de refeições permitidas
             2) Alimentos permitidos e suas quantidades
-            3) Restrições alimentares
+            3) Restrições alimentares (APENAS as explicitamente mencionadas)
             4) Variações permitidas de alimentos
             5) Qualquer outra informação relevante para a montagem de um cardápio
+
+            IMPORTANTE: NÃO faça suposições sobre restrições alimentares. Extraia APENAS o que está explicitamente mencionado no plano.
 
             Plano nutricional:
             ${initialChunk}`
@@ -70,6 +91,8 @@ serve(async (req) => {
 
     const data = await response.json();
     const analysis = data.choices[0].message.content;
+    
+    console.log('Extracted Analysis:', analysis);
 
     return new Response(JSON.stringify({ analysis }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
