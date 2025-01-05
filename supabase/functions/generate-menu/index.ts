@@ -47,9 +47,7 @@ serve(async (req) => {
        - Se o plano menciona "arroz", use arroz comum, NÃO use arroz integral
        - Se o plano menciona "pão", use pão comum, NÃO use pão integral
        - NÃO substitua alimentos por versões integrais ou diet sem especificação
-       - Use APENAS os alimentos EXPLICITAMENTE listados no plano
-       
-    3. IMPORTANTE: Retorne SEMPRE um objeto JSON válido seguindo EXATAMENTE o formato especificado.`;
+       - Use APENAS os alimentos EXPLICITAMENTE listados no plano`;
 
     let userPrompt;
     
@@ -126,7 +124,7 @@ serve(async (req) => {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.7
+        temperature: 0.7,
       }),
     });
 
@@ -139,15 +137,30 @@ serve(async (req) => {
     const data = await response.json();
     console.log('OpenAI Response:', JSON.stringify(data, null, 2));
     
+    const content = data.choices[0].message.content.trim();
+    console.log('Raw content:', content);
+    
     let result;
     try {
-      result = JSON.parse(data.choices[0].message.content);
-      console.log('Parsed Result:', JSON.stringify(result, null, 2));
+      // Try to parse the content directly first
+      result = JSON.parse(content);
     } catch (error) {
-      console.error('Error parsing OpenAI response:', error);
-      console.error('Raw content:', data.choices[0].message.content);
-      throw new Error('Failed to parse OpenAI response as JSON');
+      console.error('Error parsing direct content:', error);
+      // If direct parsing fails, try to extract JSON from the content
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          result = JSON.parse(jsonMatch[0]);
+        } catch (innerError) {
+          console.error('Error parsing extracted JSON:', innerError);
+          throw new Error('Failed to parse OpenAI response as JSON');
+        }
+      } else {
+        throw new Error('No JSON object found in OpenAI response');
+      }
     }
+
+    console.log('Parsed Result:', JSON.stringify(result, null, 2));
 
     if (!singleMeal) {
       const numDias = period === 'weekly' ? 7 : 14;
