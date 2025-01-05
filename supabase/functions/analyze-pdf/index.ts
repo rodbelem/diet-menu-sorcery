@@ -17,11 +17,14 @@ serve(async (req) => {
     const { pdfContent } = await req.json();
     
     if (!pdfContent) {
+      console.error('PDF content is missing');
       throw new Error('PDF content is required');
     }
 
-    console.log('Starting PDF analysis...');
-    console.log('Raw PDF Content:', pdfContent);
+    console.log('Iniciando análise do PDF...');
+    console.log('Tamanho do conteúdo recebido:', pdfContent.length);
+    console.log('Primeiros 500 caracteres do conteúdo:', pdfContent.substring(0, 500));
+    console.log('Últimos 500 caracteres do conteúdo:', pdfContent.substring(pdfContent.length - 500));
     
     // Split content into chunks to handle large PDFs
     const chunkSize = 50000;
@@ -30,9 +33,10 @@ serve(async (req) => {
       chunks.push(pdfContent.slice(i, i + chunkSize));
     }
 
+    console.log(`Conteúdo dividido em ${chunks.length} partes para processamento`);
+
     const initialChunk = chunks[0];
-    console.log('Processing PDF content of length:', initialChunk.length);
-    console.log('First 1000 characters of PDF content:', initialChunk.substring(0, 1000));
+    console.log('Processando primeira parte do conteúdo, tamanho:', initialChunk.length);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -86,20 +90,21 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Error from OpenAI API:', errorText);
+      console.error('Erro na resposta da OpenAI:', errorText);
       throw new Error(`OpenAI API error: ${errorText}`);
     }
 
     const data = await response.json();
     const analysis = data.choices[0].message.content;
     
-    console.log('Extracted Analysis:', analysis);
+    console.log('Análise extraída com sucesso');
+    console.log('Resultado da análise:', analysis);
 
     return new Response(JSON.stringify({ analysis }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Error in analyze-pdf function:', error);
+    console.error('Erro na função analyze-pdf:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

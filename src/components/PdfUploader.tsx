@@ -15,7 +15,8 @@ export const PdfUploader = ({ onContentExtracted }: PdfUploaderProps) => {
 
   const processPdfWithOpenAI = async (file: File): Promise<string> => {
     try {
-      console.log('Iniciando processamento do PDF com OpenAI...');
+      console.log('Iniciando processamento do PDF...');
+      console.log('Tamanho do arquivo:', file.size, 'bytes');
       
       // Converter o arquivo para base64 usando FileReader
       const base64 = await new Promise<string>((resolve, reject) => {
@@ -24,16 +25,21 @@ export const PdfUploader = ({ onContentExtracted }: PdfUploaderProps) => {
           if (typeof reader.result === 'string') {
             // Remove o prefixo data:application/pdf;base64,
             const base64String = reader.result.split(',')[1];
+            console.log('PDF convertido para base64 com sucesso');
+            console.log('Tamanho do base64:', base64String.length);
             resolve(base64String);
           } else {
             reject(new Error('Falha ao converter PDF para base64'));
           }
         };
-        reader.onerror = () => reject(reader.error);
+        reader.onerror = () => {
+          console.error('Erro ao ler arquivo:', reader.error);
+          reject(reader.error);
+        };
         reader.readAsDataURL(file);
       });
       
-      console.log('PDF convertido para base64, chamando função do Supabase...');
+      console.log('Enviando PDF para processamento...');
       
       const { data, error } = await supabase.functions.invoke('process-pdf', {
         body: { pdfBase64: base64 }
@@ -44,7 +50,8 @@ export const PdfUploader = ({ onContentExtracted }: PdfUploaderProps) => {
         throw new Error('Erro ao processar o PDF');
       }
 
-      console.log('PDF processado com sucesso pela OpenAI');
+      console.log('PDF processado com sucesso');
+      console.log('Tamanho do conteúdo extraído:', data.content.length);
       return data.content;
     } catch (error) {
       console.error('Erro detalhado ao processar PDF:', error);
@@ -59,8 +66,10 @@ export const PdfUploader = ({ onContentExtracted }: PdfUploaderProps) => {
       setSelectedFile(file);
       
       try {
-        console.log('Arquivo selecionado:', file.name, file.size, 'bytes');
+        console.log('Arquivo selecionado:', file.name);
+        console.log('Tamanho do arquivo:', file.size, 'bytes');
         const extractedText = await processPdfWithOpenAI(file);
+        console.log('Conteúdo extraído com sucesso');
         onContentExtracted(extractedText);
         toast({
           title: "PDF processado com sucesso",
