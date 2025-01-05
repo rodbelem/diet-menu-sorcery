@@ -8,6 +8,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const diasSemana = [
+  "Segunda-feira",
+  "Terça-feira",
+  "Quarta-feira",
+  "Quinta-feira",
+  "Sexta-feira",
+  "Sábado",
+  "Domingo"
+];
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -37,7 +47,9 @@ serve(async (req) => {
        - Se o plano menciona "arroz", use arroz comum, NÃO use arroz integral
        - Se o plano menciona "pão", use pão comum, NÃO use pão integral
        - NÃO substitua alimentos por versões integrais ou diet sem especificação
-       - Use APENAS os alimentos EXPLICITAMENTE listados no plano`;
+       - Use APENAS os alimentos EXPLICITAMENTE listados no plano
+       
+    3. IMPORTANTE: Retorne SEMPRE um objeto JSON válido seguindo EXATAMENTE o formato especificado.`;
 
     let userPrompt;
     
@@ -53,7 +65,7 @@ serve(async (req) => {
       
       Gere UMA NOVA opção para a refeição "${mealType}".
       
-      Retorne no seguinte formato:
+      Retorne um objeto JSON no seguinte formato:
       {
         "meal": "Nome da refeição",
         "description": "Descrição detalhada",
@@ -78,7 +90,7 @@ serve(async (req) => {
       
       Crie um cardápio para ${numDias} dias, incluindo todas as refeições especificadas.
       
-      Retorne no seguinte formato:
+      Retorne um objeto JSON no seguinte formato:
       {
         "days": [
           {
@@ -125,24 +137,25 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    let result;
+    console.log('OpenAI Response:', JSON.stringify(data, null, 2));
     
+    let result;
     try {
       result = JSON.parse(data.choices[0].message.content);
+      console.log('Parsed Result:', JSON.stringify(result, null, 2));
     } catch (error) {
       console.error('Error parsing OpenAI response:', error);
+      console.error('Raw content:', data.choices[0].message.content);
       throw new Error('Failed to parse OpenAI response as JSON');
     }
 
     if (!singleMeal) {
-      // Validação e correção do número de dias
       const numDias = period === 'weekly' ? 7 : 14;
       if (result.days.length !== numDias) {
         console.error(`Número incorreto de dias gerado: ${result.days.length}, esperado: ${numDias}`);
         throw new Error('Número incorreto de dias gerado');
       }
 
-      // Garantir que os dias da semana estejam corretos
       result.days = result.days.map((day: any, index: number) => {
         const dayIndex = index % 7;
         return {
@@ -150,13 +163,6 @@ serve(async (req) => {
           day: diasSemana[dayIndex]
         };
       });
-    }
-
-    console.log('Menu gerado com sucesso');
-    if (singleMeal) {
-      console.log('Refeição gerada:', JSON.stringify(result, null, 2));
-    } else {
-      console.log('Primeiro dia de exemplo:', JSON.stringify(result.days[0], null, 2));
     }
 
     return new Response(JSON.stringify({ menu: JSON.stringify(result) }), {
