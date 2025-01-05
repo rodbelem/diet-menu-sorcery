@@ -20,10 +20,7 @@ export const generateWithOpenAI = async (prompt: string) => {
 
     return completion.choices[0].message.content;
   } catch (error: any) {
-    if (error.message?.includes('maximum context length')) {
-      console.log('Texto muito longo para OpenAI, alternando para Claude...');
-      throw new Error('TOKEN_LIMIT_EXCEEDED');
-    }
+    console.error('OpenAI API error:', error);
     throw error;
   }
 };

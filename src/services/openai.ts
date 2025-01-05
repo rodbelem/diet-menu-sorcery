@@ -4,6 +4,10 @@ import { Json } from '@/integrations/supabase/types';
 import { generateAIResponse } from './ai';
 
 export const generateMenu = async (pdfContent: string, period: "weekly" | "biweekly") => {
+  if (!pdfContent) {
+    throw new Error('PDF content is required');
+  }
+
   // First, store the pattern from PDF
   const { data: patternData, error: patternError } = await supabase
     .from('meal_patterns')
@@ -68,6 +72,7 @@ Retorne os dados em formato JSON seguindo exatamente esta estrutura:
 }`;
 
   try {
+    console.log('Gerando cardápio com OpenAI...');
     const response = await generateAIResponse(prompt);
     if (!response) throw new Error("Não foi possível gerar o cardápio");
     
