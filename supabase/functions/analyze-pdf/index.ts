@@ -24,20 +24,7 @@ serve(async (req) => {
     console.log('Iniciando análise do PDF...');
     console.log('Tamanho do conteúdo recebido:', pdfContent.length);
     console.log('Primeiros 500 caracteres do conteúdo:', pdfContent.substring(0, 500));
-    console.log('Últimos 500 caracteres do conteúdo:', pdfContent.substring(pdfContent.length - 500));
     
-    // Split content into chunks to handle large PDFs
-    const chunkSize = 50000;
-    const chunks = [];
-    for (let i = 0; i < pdfContent.length; i += chunkSize) {
-      chunks.push(pdfContent.slice(i, i + chunkSize));
-    }
-
-    console.log(`Conteúdo dividido em ${chunks.length} partes para processamento`);
-
-    const initialChunk = chunks[0];
-    console.log('Processando primeira parte do conteúdo, tamanho:', initialChunk.length);
-
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -45,28 +32,36 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
-            content: `You are a nutrition expert specialized in analyzing meal plans and extracting patterns. 
-            IMPORTANT: Do not make assumptions about dietary restrictions. Only extract what is explicitly stated in the plan.
-            Return all responses in JSON format with the following structure:
+            content: `Você é um especialista em nutrição focado em analisar planos alimentares e extrair padrões.
+            IMPORTANTE: NÃO faça suposições sobre restrições alimentares. Extraia APENAS o que está explicitamente declarado no plano.
+            
+            Analise o plano nutricional fornecido e extraia EXATAMENTE:
+            1. Todos os tipos de refeições mencionadas (café da manhã, almoço, etc)
+            2. Alimentos permitidos e suas porções para cada refeição
+            3. Restrições alimentares EXPLICITAMENTE mencionadas
+            4. Horários específicos de refeições, se mencionados
+            5. Variações permitidas de alimentos
+            
+            Retorne a análise em formato JSON com a seguinte estrutura:
             {
               "meal_types": {
-                "meal_name": {
-                  "allowed_foods": [],
-                  "portions": [],
-                  "restrictions": []
+                "nome_da_refeicao": {
+                  "allowed_foods": ["lista de alimentos permitidos"],
+                  "portions": ["porções especificadas"],
+                  "restrictions": ["restrições específicas"]
                 }
               },
-              "dietary_restrictions": [],
-              "allowed_proteins": [],
-              "allowed_carbs": [],
-              "allowed_vegetables": [],
-              "allowed_fruits": [],
-              "allowed_dairy": [],
-              "timing": {}
+              "dietary_restrictions": ["apenas restrições EXPLICITAMENTE mencionadas"],
+              "allowed_proteins": ["todas as proteínas permitidas"],
+              "allowed_carbs": ["todos os carboidratos permitidos"],
+              "allowed_vegetables": ["todos os vegetais permitidos"],
+              "allowed_fruits": ["todas as frutas permitidas"],
+              "allowed_dairy": ["todos os laticínios permitidos"],
+              "timing": {"refeicao": "horário"}
             }`
           },
           {
@@ -81,9 +76,10 @@ serve(async (req) => {
             IMPORTANTE: NÃO faça suposições sobre restrições alimentares. Extraia APENAS o que está explicitamente mencionado no plano.
 
             Plano nutricional:
-            ${initialChunk}`
+            ${pdfContent}`
           }
         ],
+        temperature: 0.3,
         response_format: { type: "json_object" }
       }),
     });
