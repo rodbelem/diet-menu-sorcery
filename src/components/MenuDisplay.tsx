@@ -39,7 +39,6 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
           <PDFDownloadLink
             document={<MenuPDF menu={menu} />}
             fileName="cardapio.pdf"
-            className="inline-flex"
           >
             {({ loading }) => (
               <Button
