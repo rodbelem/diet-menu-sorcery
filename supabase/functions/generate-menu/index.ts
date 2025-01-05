@@ -8,16 +8,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const diasSemana = [
-  "Segunda-feira",
-  "Terça-feira",
-  "Quarta-feira",
-  "Quinta-feira",
-  "Sexta-feira",
-  "Sábado",
-  "Domingo"
-];
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -63,7 +53,7 @@ serve(async (req) => {
       
       Gere UMA NOVA opção para a refeição "${mealType}".
       
-      Retorne no seguinte formato JSON:
+      Retorne no seguinte formato:
       {
         "meal": "Nome da refeição",
         "description": "Descrição detalhada",
@@ -88,7 +78,7 @@ serve(async (req) => {
       
       Crie um cardápio para ${numDias} dias, incluindo todas as refeições especificadas.
       
-      Retorne no seguinte formato JSON:
+      Retorne no seguinte formato:
       {
         "days": [
           {
@@ -119,13 +109,12 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.7,
-        response_format: { type: "json_object" }
+        temperature: 0.7
       }),
     });
 
@@ -136,7 +125,14 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    let result = JSON.parse(data.choices[0].message.content);
+    let result;
+    
+    try {
+      result = JSON.parse(data.choices[0].message.content);
+    } catch (error) {
+      console.error('Error parsing OpenAI response:', error);
+      throw new Error('Failed to parse OpenAI response as JSON');
+    }
 
     if (!singleMeal) {
       // Validação e correção do número de dias

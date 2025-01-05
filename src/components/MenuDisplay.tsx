@@ -46,6 +46,7 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
                 disabled={loading}
                 className="flex items-center gap-2"
                 type="button"
+                asChild
               >
                 <span className="flex items-center gap-2">
                   <FileDown className="w-4 h-4" />
