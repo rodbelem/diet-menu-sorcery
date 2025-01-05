@@ -41,18 +41,21 @@ export type Database = {
       }
       meal_patterns: {
         Row: {
+          analyzed_content: Json | null
           content: string
           created_at: string | null
           id: string
           updated_at: string | null
         }
         Insert: {
+          analyzed_content?: Json | null
           content: string
           created_at?: string | null
           id?: string
           updated_at?: string | null
         }
         Update: {
+          analyzed_content?: Json | null
           content?: string
           created_at?: string | null
           id?: string
@@ -100,6 +103,7 @@ export type Database = {
       }
       shopping_lists: {
         Row: {
+          analysis: Json | null
           content: Json
           created_at: string | null
           id: string
@@ -108,6 +112,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          analysis?: Json | null
           content: Json
           created_at?: string | null
           id?: string
@@ -116,6 +121,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          analysis?: Json | null
           content?: Json
           created_at?: string | null
           id?: string

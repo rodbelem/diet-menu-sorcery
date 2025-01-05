@@ -1,0 +1,7 @@
+project_id = "dwkjukmpjbnrguijxhxf"
+
+[analyze-pdf]
+verify_jwt = false
+
+[generate-menu]
+verify_jwt = false

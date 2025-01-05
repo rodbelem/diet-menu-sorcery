@@ -1,85 +1,57 @@
 import { Menu, MenuItem } from '@/types/menu';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
-import { generateAIResponse } from './ai';
 
 export const generateMenu = async (pdfContent: string, period: "weekly" | "biweekly") => {
   if (!pdfContent) {
     throw new Error('PDF content is required');
   }
 
-  // First, store the pattern from PDF
-  const { data: patternData, error: patternError } = await supabase
-    .from('meal_patterns')
-    .insert([{ content: pdfContent }])
-    .select()
-    .single();
-
-  if (patternError) {
-    console.error('Error storing meal pattern:', patternError);
-    throw patternError;
-  }
-
-  const periodConfig = {
-    weekly: {
-      days: "7",
-      type: "semanal",
-      period: "semana"
-    },
-    biweekly: {
-      days: "15",
-      type: "quinzenal",
-      period: "quinzena"
-    }
-  };
-
-  const config = periodConfig[period];
-  
-  const prompt = `Você é um nutricionista especializado em montar sugestões de cardápios para pacientes com base no padrão utilizado em seus respectivos planejamentos alimentares.
-
-Analise o padrão alimentar abaixo e crie uma sugestão de cardápio ${config.type} com ${config.days} dias, respeitando rigorosamente:
-1) Os horários de cada refeição
-2) As quantidades especificadas
-3) Os alimentos permitidos e suas variações
-4) Todas as restrições alimentares mencionadas
-
-Padrão alimentar:
-"""
-${pdfContent}
-"""
-
-Retorne os dados em formato JSON seguindo exatamente esta estrutura:
-{
-  "days": [
-    {
-      "day": "Segunda-feira",
-      "meals": [
-        {
-          "meal": "Nome da refeição conforme está no planejamento",
-          "description": "Descrição detalhada da refeição",
-          "ingredients": [
-            {
-              "name": "Nome do ingrediente",
-              "quantity": "Quantidade necessária",
-              "estimatedCost": 0.00
-            }
-          ]
-        }
-      ]
-    }
-  ],
-  "totalCost": 0.00
-}`;
-
   try {
-    console.log('Gerando cardápio com OpenAI...');
-    const response = await generateAIResponse(prompt);
-    if (!response) throw new Error("Não foi possível gerar o cardápio");
-    
-    const menuData = JSON.parse(response) as Menu;
+    // First, analyze the PDF with Claude
+    console.log('Analyzing PDF with Claude...');
+    const { data: analysisResponse, error: analysisError } = await supabase.functions.invoke('analyze-pdf', {
+      body: { pdfContent }
+    });
+
+    if (analysisError) {
+      console.error('Error analyzing PDF:', analysisError);
+      throw analysisError;
+    }
+
+    // Store the pattern and analysis
+    const { data: patternData, error: patternError } = await supabase
+      .from('meal_patterns')
+      .insert([{ 
+        content: pdfContent,
+        analyzed_content: analysisResponse.analysis
+      }])
+      .select()
+      .single();
+
+    if (patternError) {
+      console.error('Error storing meal pattern:', patternError);
+      throw patternError;
+    }
+
+    // Generate menu with OpenAI using the analysis
+    console.log('Generating menu with OpenAI...');
+    const { data: menuResponse, error: menuError } = await supabase.functions.invoke('generate-menu', {
+      body: { 
+        analyzedPattern: patternData.analyzed_content,
+        period 
+      }
+    });
+
+    if (menuError) {
+      console.error('Error generating menu:', menuError);
+      throw menuError;
+    }
+
+    const menuData = JSON.parse(menuResponse.menu) as Menu;
 
     // Store the generated menu
-    const { data: menuRecord, error: menuError } = await supabase
+    const { data: menuRecord, error: menuStoreError } = await supabase
       .from('menus')
       .insert([{
         pattern_id: patternData.id,
@@ -90,9 +62,9 @@ Retorne os dados em formato JSON seguindo exatamente esta estrutura:
       .select()
       .single();
 
-    if (menuError) {
-      console.error('Error storing menu:', menuError);
-      throw menuError;
+    if (menuStoreError) {
+      console.error('Error storing menu:', menuStoreError);
+      throw menuStoreError;
     }
     
     return menuData;
@@ -126,10 +98,12 @@ Retorne os dados em formato JSON seguindo exatamente esta estrutura:
 }`;
 
   try {
-    const response = await generateAIResponse(prompt);
-    if (!response) throw new Error("Não foi possível gerar nova opção de refeição");
-    
-    return JSON.parse(response) as MenuItem;
+    const { data: response, error } = await supabase.functions.invoke('generate-menu', {
+      body: { prompt }
+    });
+
+    if (error) throw error;
+    return JSON.parse(response.menu) as MenuItem;
   } catch (error) {
     console.error("Erro ao gerar nova opção de refeição:", error);
     throw error;
