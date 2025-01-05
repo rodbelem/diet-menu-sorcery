@@ -41,14 +41,16 @@ export const MenuDisplay = ({ menu, onRegenerateMeal, regeneratingMeal }: MenuDi
             fileName="cardapio.pdf"
           >
             {({ loading }) => (
-              <Button
-                variant="outline"
-                disabled={loading}
-                className="flex items-center gap-2"
-              >
-                <FileDown className="w-4 h-4" />
-                {loading ? "Gerando PDF..." : "Baixar Cardápio PDF"}
-              </Button>
+              <div>
+                <Button
+                  variant="outline"
+                  disabled={loading}
+                  className="flex items-center gap-2"
+                >
+                  <FileDown className="w-4 h-4" />
+                  {loading ? "Gerando PDF..." : "Baixar Cardápio PDF"}
+                </Button>
+              </div>
             )}
           </PDFDownloadLink>
         </div>

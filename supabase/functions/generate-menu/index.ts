@@ -47,7 +47,12 @@ serve(async (req) => {
        - Se o plano menciona "arroz", use arroz comum, NÃO use arroz integral
        - Se o plano menciona "pão", use pão comum, NÃO use pão integral
        - NÃO substitua alimentos por versões integrais ou diet sem especificação
-       - Use APENAS os alimentos EXPLICITAMENTE listados no plano`;
+       - Use APENAS os alimentos EXPLICITAMENTE listados no plano
+       
+    3. IMPORTANTE: Você DEVE gerar EXATAMENTE o mesmo número de refeições por dia que está especificado no plano analisado.
+       - Analise cuidadosamente o padrão para identificar todas as refeições diárias
+       - Inclua TODAS as refeições mencionadas no plano (café da manhã, lanche da manhã, almoço, lanche da tarde, jantar, ceia, etc)
+       - NÃO omita nenhuma refeição que esteja no plano original`;
 
     let userPrompt;
     
@@ -85,8 +90,9 @@ serve(async (req) => {
       2. Use TODOS os grupos alimentares permitidos
       3. Inclua proteínas animais se permitidas no plano
       4. Use os alimentos EXATAMENTE como listados (não substitua por versões integrais)
+      5. INCLUA TODAS as refeições mencionadas no plano analisado (café da manhã, lanche da manhã, almoço, lanche da tarde, jantar, ceia, etc)
       
-      Crie um cardápio para ${numDias} dias, incluindo todas as refeições especificadas.
+      Crie um cardápio para ${numDias} dias, incluindo TODAS as refeições especificadas no plano.
       
       Retorne um objeto JSON no seguinte formato:
       {
@@ -142,11 +148,9 @@ serve(async (req) => {
     
     let result;
     try {
-      // Try to parse the content directly first
       result = JSON.parse(content);
     } catch (error) {
       console.error('Error parsing direct content:', error);
-      // If direct parsing fails, try to extract JSON from the content
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         try {
@@ -167,6 +171,17 @@ serve(async (req) => {
       if (result.days.length !== numDias) {
         console.error(`Número incorreto de dias gerado: ${result.days.length}, esperado: ${numDias}`);
         throw new Error('Número incorreto de dias gerado');
+      }
+
+      // Verificar se todas as refeições estão presentes
+      const refeicoesPadrao = Object.keys(analyzedPattern.meal_types || {});
+      for (const day of result.days) {
+        const refeicoesGeradas = day.meals.map(m => m.meal);
+        const faltando = refeicoesPadrao.filter(r => !refeicoesGeradas.includes(r));
+        if (faltando.length > 0) {
+          console.error(`Refeições faltando no dia ${day.day}:`, faltando);
+          throw new Error(`Refeições faltando no cardápio: ${faltando.join(', ')}`);
+        }
       }
 
       result.days = result.days.map((day: any, index: number) => {
