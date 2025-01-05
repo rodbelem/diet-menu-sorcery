@@ -20,10 +20,10 @@ serve(async (req) => {
       throw new Error('PDF content is required');
     }
 
-    console.log('Processing PDF with GPT-4...');
+    console.log('Processing PDF with GPT-4o-mini...');
     
     // Split the base64 content into chunks to handle large PDFs
-    const chunkSize = 100000; // Adjust based on testing
+    const chunkSize = 50000; // Reduced chunk size for gpt-4o-mini
     const chunks = [];
     for (let i = 0; i < pdfBase64.length; i += chunkSize) {
       chunks.push(pdfBase64.slice(i, i + chunkSize));
@@ -40,7 +40,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4-turbo-preview',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -52,8 +52,7 @@ serve(async (req) => {
             ${initialChunk}`
           }
         ],
-        max_tokens: 4000,
-        temperature: 0.7
+        response_format: { type: "json_object" }
       }),
     });
 
