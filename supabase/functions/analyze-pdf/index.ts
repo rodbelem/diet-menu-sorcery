@@ -22,8 +22,7 @@ serve(async (req) => {
     }
 
     console.log('Iniciando análise do PDF...');
-    console.log('Tamanho do conteúdo recebido:', pdfContent.length);
-    console.log('Primeiros 500 caracteres do conteúdo:', pdfContent.substring(0, 500));
+    console.log('Tamanho total do conteúdo recebido:', pdfContent.length, 'caracteres');
     
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -75,7 +74,7 @@ serve(async (req) => {
 
             IMPORTANTE: NÃO faça suposições sobre restrições alimentares. Extraia APENAS o que está explicitamente mencionado no plano.
 
-            Plano nutricional:
+            Plano nutricional completo:
             ${pdfContent}`
           }
         ],
@@ -93,8 +92,8 @@ serve(async (req) => {
     const data = await response.json();
     const analysis = data.choices[0].message.content;
     
-    console.log('Análise extraída com sucesso');
-    console.log('Resultado da análise:', analysis);
+    console.log('Análise do plano nutricional concluída com sucesso');
+    console.log('Estrutura da análise:', JSON.stringify(analysis, null, 2));
 
     return new Response(JSON.stringify({ analysis }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
