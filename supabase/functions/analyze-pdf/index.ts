@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const anthropicApiKey = Deno.env.get('ANTHROPIC_API_KEY');
+const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,19 +20,31 @@ serve(async (req) => {
       throw new Error('PDF content is required');
     }
 
-    console.log('Analyzing PDF content with Claude...');
+    console.log('Analyzing PDF with GPT-4o-mini...');
     
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Split content into chunks to handle large PDFs
+    const chunkSize = 50000;
+    const chunks = [];
+    for (let i = 0; i < pdfContent.length; i += chunkSize) {
+      chunks.push(pdfContent.slice(i, i + chunkSize));
+    }
+
+    const initialChunk = chunks[0];
+    console.log(`Processing first chunk of ${initialChunk.length} characters`);
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
-        'x-api-key': anthropicApiKey!,
-        'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-opus-20240229',
-        max_tokens: 4096,
+        model: 'gpt-4o-mini',
         messages: [
+          {
+            role: 'system',
+            content: 'You are a nutrition expert specialized in analyzing meal plans and extracting patterns. Return all responses in JSON format.'
+          },
           {
             role: 'user',
             content: `Analise cuidadosamente este plano nutricional e extraia todas as informações relevantes sobre:
@@ -43,23 +55,21 @@ serve(async (req) => {
             5) Qualquer outra informação relevante para a montagem de um cardápio
 
             Plano nutricional:
-            ${pdfContent}
-
-            Retorne a análise em formato JSON estruturado que possa ser usado posteriormente para gerar cardápios.`
+            ${initialChunk}`
           }
         ],
-        system: "Você é um nutricionista especializado em analisar planos alimentares e extrair padrões. Retorne todas as respostas em formato JSON."
-      })
+        response_format: { type: "json_object" }
+      }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Error from Claude API:', errorText);
-      throw new Error(`Claude API error: ${errorText}`);
+      console.error('Error from OpenAI API:', errorText);
+      throw new Error(`OpenAI API error: ${errorText}`);
     }
 
     const data = await response.json();
-    const analysis = data.content[0].text;
+    const analysis = data.choices[0].message.content;
 
     return new Response(JSON.stringify({ analysis }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
