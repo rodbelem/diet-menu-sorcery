@@ -24,7 +24,7 @@ serve(async (req) => {
   }
 
   try {
-    const { analyzedPattern, period } = await req.json();
+    const { analyzedPattern, period, singleMeal, mealType } = await req.json();
     
     if (!analyzedPattern) {
       throw new Error('Analyzed pattern is required');
@@ -32,10 +32,10 @@ serve(async (req) => {
 
     console.log('Generating menu with OpenAI...');
     console.log('Analyzed Pattern:', JSON.stringify(analyzedPattern, null, 2));
+    console.log('Single Meal:', singleMeal);
+    console.log('Meal Type:', mealType);
     
-    const numDias = period === 'weekly' ? 7 : 14;
-    
-    const systemPrompt = `Você é um nutricionista brasileiro especializado em criar cardápios personalizados.
+    let systemPrompt = `Você é um nutricionista brasileiro especializado em criar cardápios personalizados.
     
     ATENÇÃO - REGRAS CRÍTICAS:
     1. NÃO FAÇA SUPOSIÇÕES SOBRE RESTRIÇÕES ALIMENTARES!
@@ -47,59 +47,70 @@ serve(async (req) => {
        - Se o plano menciona "arroz", use arroz comum, NÃO use arroz integral
        - Se o plano menciona "pão", use pão comum, NÃO use pão integral
        - NÃO substitua alimentos por versões integrais ou diet sem especificação
-       - Use APENAS os alimentos EXPLICITAMENTE listados no plano
-    
-    Regras adicionais:
-    1. Use APENAS português do Brasil
-    2. Gere EXATAMENTE ${numDias} dias de cardápio
-    3. Siga ESTRITAMENTE o padrão alimentar fornecido
-    4. Mantenha consistência nas unidades de medida (g, ml, etc)
-    5. Forneça descrições detalhadas das preparações
-    6. Inclua TODAS as refeições especificadas no padrão
-    7. Estime os custos com base em preços médios do Brasil
-    8. Mantenha variedade entre os dias
-    9. Se houver dúvida sobre um alimento, PERGUNTE antes de fazer substituições`;
+       - Use APENAS os alimentos EXPLICITAMENTE listados no plano`;
 
-    const userPrompt = `Com base nesta análise de padrão alimentar:
-    ${JSON.stringify(analyzedPattern, null, 2)}
+    let userPrompt;
     
-    IMPORTANTE:
-    1. NÃO assuma restrições que não foram especificadas
-    2. Use TODOS os grupos alimentares permitidos
-    3. Inclua proteínas animais se permitidas no plano
-    4. Use os alimentos EXATAMENTE como listados (não substitua por versões integrais)
-    5. Mantenha o equilíbrio nutricional especificado
-    
-    Crie um cardápio para ${numDias} dias, incluindo todas as refeições especificadas.
-    
-    Para cada refeição, forneça:
-    1. Nome da refeição em português
-    2. Descrição detalhada da preparação
-    3. Lista completa de ingredientes com quantidades precisas
-    4. Estimativa de custo realista para o Brasil
-    
-    Retorne no seguinte formato JSON:
-    {
-      "days": [
-        {
-          "day": "Nome do dia em português",
-          "meals": [
-            {
-              "meal": "Nome da refeição em português",
-              "description": "Descrição detalhada em português",
-              "ingredients": [
-                {
-                  "name": "Nome do ingrediente em português",
-                  "quantity": "Quantidade com unidade de medida",
-                  "estimatedCost": 0.00
-                }
-              ]
-            }
-          ]
-        }
-      ],
-      "totalCost": 0.00
-    }`;
+    if (singleMeal) {
+      userPrompt = `Com base nesta análise de padrão alimentar:
+      ${JSON.stringify(analyzedPattern, null, 2)}
+      
+      IMPORTANTE:
+      1. NÃO assuma restrições que não foram especificadas
+      2. Use TODOS os grupos alimentares permitidos
+      3. Inclua proteínas animais se permitidas no plano
+      4. Use os alimentos EXATAMENTE como listados (não substitua por versões integrais)
+      
+      Gere UMA NOVA opção para a refeição "${mealType}".
+      
+      Retorne no seguinte formato JSON:
+      {
+        "meal": "Nome da refeição",
+        "description": "Descrição detalhada",
+        "ingredients": [
+          {
+            "name": "Nome do ingrediente",
+            "quantity": "Quantidade com unidade",
+            "estimatedCost": 0.00
+          }
+        ]
+      }`;
+    } else {
+      const numDias = period === 'weekly' ? 7 : 14;
+      userPrompt = `Com base nesta análise de padrão alimentar:
+      ${JSON.stringify(analyzedPattern, null, 2)}
+      
+      IMPORTANTE:
+      1. NÃO assuma restrições que não foram especificadas
+      2. Use TODOS os grupos alimentares permitidos
+      3. Inclua proteínas animais se permitidas no plano
+      4. Use os alimentos EXATAMENTE como listados (não substitua por versões integrais)
+      
+      Crie um cardápio para ${numDias} dias, incluindo todas as refeições especificadas.
+      
+      Retorne no seguinte formato JSON:
+      {
+        "days": [
+          {
+            "day": "Nome do dia",
+            "meals": [
+              {
+                "meal": "Nome da refeição",
+                "description": "Descrição detalhada",
+                "ingredients": [
+                  {
+                    "name": "Nome do ingrediente",
+                    "quantity": "Quantidade com unidade",
+                    "estimatedCost": 0.00
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "totalCost": 0.00
+      }`;
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -125,27 +136,34 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    let menu = JSON.parse(data.choices[0].message.content);
+    let result = JSON.parse(data.choices[0].message.content);
 
-    // Validação e correção do número de dias
-    if (menu.days.length !== numDias) {
-      console.error(`Número incorreto de dias gerado: ${menu.days.length}, esperado: ${numDias}`);
-      throw new Error('Número incorreto de dias gerado');
+    if (!singleMeal) {
+      // Validação e correção do número de dias
+      const numDias = period === 'weekly' ? 7 : 14;
+      if (result.days.length !== numDias) {
+        console.error(`Número incorreto de dias gerado: ${result.days.length}, esperado: ${numDias}`);
+        throw new Error('Número incorreto de dias gerado');
+      }
+
+      // Garantir que os dias da semana estejam corretos
+      result.days = result.days.map((day: any, index: number) => {
+        const dayIndex = index % 7;
+        return {
+          ...day,
+          day: diasSemana[dayIndex]
+        };
+      });
     }
 
-    // Garantir que os dias da semana estejam corretos
-    menu.days = menu.days.map((day: any, index: number) => {
-      const dayIndex = index % 7;
-      return {
-        ...day,
-        day: diasSemana[dayIndex]
-      };
-    });
-
     console.log('Menu gerado com sucesso');
-    console.log('Primeiro dia de exemplo:', JSON.stringify(menu.days[0], null, 2));
+    if (singleMeal) {
+      console.log('Refeição gerada:', JSON.stringify(result, null, 2));
+    } else {
+      console.log('Primeiro dia de exemplo:', JSON.stringify(result.days[0], null, 2));
+    }
 
-    return new Response(JSON.stringify({ menu: JSON.stringify(menu) }), {
+    return new Response(JSON.stringify({ menu: JSON.stringify(result) }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
