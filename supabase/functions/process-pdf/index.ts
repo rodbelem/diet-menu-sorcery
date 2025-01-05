@@ -14,17 +14,15 @@ serve(async (req) => {
   }
 
   try {
-    const { pdfBase64 } = await req.json();
+    const { pdfContent } = await req.json();
     
-    if (!pdfBase64) {
+    if (!pdfContent) {
+      console.error('PDF content is missing');
       throw new Error('PDF content is required');
     }
 
-    console.log('Processing PDF with GPT-4o...');
-    console.log('Base64 content length:', pdfBase64.length);
-    
-    // Process the entire PDF content at once
-    console.log('Processing complete PDF content...');
+    console.log('Iniciando análise do texto...');
+    console.log('Tamanho do conteúdo recebido:', pdfContent.length, 'caracteres');
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -37,18 +35,18 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `You are a PDF content extractor. Your task is to extract ALL text content from the provided PDF, maintaining all the important information about meals, portions, and dietary requirements. Do not summarize or modify the content. Return the complete extracted text.
-
-IMPORTANT:
-1. Extract and return ALL text content
-2. Do not summarize or modify the content
-3. Maintain all specific details about meals, portions, and requirements
-4. If you see base64 encoded content, decode it first`
+            content: `Você é um especialista em nutrição analisando planos alimentares.
+            
+            IMPORTANTE:
+            1. Analise TODOS os detalhes do plano nutricional fornecido
+            2. Mantenha todas as informações sobre refeições, porções e requisitos
+            3. NÃO faça suposições sobre restrições alimentares
+            4. Extraia APENAS o que está explicitamente declarado no plano`
           },
           {
             role: 'user',
-            content: `Extract and return the complete text content from this PDF (base64 encoded). Do not modify or summarize the content:
-            ${pdfBase64}`
+            content: `Analise cuidadosamente este plano nutricional completo e extraia todas as informações relevantes:
+            ${pdfContent}`
           }
         ],
         temperature: 0.1
@@ -64,9 +62,9 @@ IMPORTANT:
     const data = await response.json();
     const extractedContent = data.choices[0].message.content;
     
-    console.log('Content extraction completed');
-    console.log('Extracted content length:', extractedContent.length);
-    console.log('Sample of extracted content:', extractedContent.substring(0, 200));
+    console.log('Análise concluída');
+    console.log('Tamanho do conteúdo analisado:', extractedContent.length);
+    console.log('Amostra do conteúdo:', extractedContent.substring(0, 200));
 
     return new Response(JSON.stringify({ content: extractedContent }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
